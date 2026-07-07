@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Allergy Clinic — A Learning Task</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#e9eef0;
+    --surface:#ffffff;
+    --ink:#15302f;
+    --ink-soft:#4b5f5e;
+    --muted:#7c8a89;
+    --line:#dde3e5;
+    --primary:#0f6e6a;
+    --primary-dark:#0a524f;
+    --reaction:#cf4340;
+    --reaction-bg:#fbeceb;
+    --reaction-line:#f3c4c2;
+    --safe:#2c9268;
+    --safe-bg:#e7f4ee;
+    --safe-line:#bfe3d1;
+    --amber:#c98a1e;
+    --amber-bg:#fbf1dc;
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(20,48,47,.04),0 12px 32px -12px rgba(20,48,47,.18);
+    --radius:16px;
+  }
+  html,body{height:100%}
+  body{
+    font-family:var(--font-sans);
+    background:
+      radial-gradient(120% 90% at 50% -10%, #f2f6f7 0%, var(--bg) 55%);
+    color:var(--ink);
+    min-height:100%;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:clamp(12px,4vw,40px) 16px 64px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{width:100%;max-width:600px}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+
+  /* ── instrument header ── */
+  .masthead{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#fbfcfc,#f5f8f8);
+  }
+  .brandmark{display:flex;align-items:center;gap:10px}
+  .pulse-dot{
+    width:9px;height:9px;border-radius:50%;background:var(--primary);
+    box-shadow:0 0 0 0 rgba(15,110,106,.5);
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .pulse-dot{animation:pulse 2.4s infinite}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(15,110,106,.45)}70%{box-shadow:0 0 0 8px rgba(15,110,106,0)}100%{box-shadow:0 0 0 0 rgba(15,110,106,0)}}
+  }
+  .brandmark b{font-size:13px;letter-spacing:.02em}
+  .eyebrow{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+  }
+
+  .pad{padding:clamp(22px,5vw,34px)}
+
+  h1{font-size:clamp(24px,5vw,31px);line-height:1.12;letter-spacing:-.02em;font-weight:700;margin-bottom:14px}
+  h2{font-size:20px;letter-spacing:-.01em;font-weight:700;margin-bottom:10px}
+  p{color:var(--ink-soft);font-size:15.5px}
+  p + p{margin-top:12px}
+  .lede{font-size:16.5px;color:var(--ink-soft)}
+  strong{color:var(--ink);font-weight:650}
+
+  .chart-note{
+    margin-top:20px;padding:14px 16px;border-radius:12px;
+    background:#f4f8f8;border:1px solid var(--line);
+    font-size:14px;color:var(--ink-soft);
+  }
+  .chart-note b{color:var(--ink)}
+
+  /* ── buttons ── */
+  .btn{
+    font-family:inherit;font-size:16px;font-weight:600;
+    border:none;border-radius:12px;padding:15px 22px;cursor:pointer;
+    transition:transform .08s ease, filter .15s ease, background .15s ease;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-dark)}
+  .btn-ghost{background:transparent;color:var(--primary);border:1px solid var(--line);font-weight:600}
+  .btn-ghost:hover{background:#f4f8f8}
+  .btn-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  .btn-react{background:var(--reaction-bg);color:var(--reaction);border:1.5px solid var(--reaction-line)}
+  .btn-react:hover{background:#f8e0df}
+  .btn-safe{background:var(--safe-bg);color:#1f7a53;border:1.5px solid var(--safe-line)}
+  .btn-safe:hover{background:#dcefe4}
+  .btn:disabled{opacity:.4;cursor:default}
+
+  /* ── progress ── */
+  .progress{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .track{flex:1;height:6px;border-radius:99px;background:#e3e9ea;overflow:hidden}
+  .fill{height:100%;background:var(--primary);border-radius:99px;transition:width .35s ease;width:0}
+  .counter{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.08em;color:var(--muted);white-space:nowrap}
+
+  /* ── the meal plate ── */
+  .prompt-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+  .plate{
+    display:flex;flex-wrap:wrap;gap:14px;justify-content:center;
+    padding:30px 20px;border-radius:14px;
+    background:radial-gradient(80% 120% at 50% 0%, #fafcfc, #eef4f4);
+    border:1px solid var(--line);margin-bottom:22px;
+  }
+  .food{
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    min-width:96px;padding:16px 14px;border-radius:12px;
+    background:var(--surface);border:1px solid var(--line);
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .food{animation:rise .35s ease both}
+    @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  }
+  .food .emoji{font-size:44px;line-height:1}
+  .food .fname{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .q{font-size:18px;font-weight:650;text-align:center;margin-bottom:18px;color:var(--ink)}
+  .q .pt{color:var(--primary)}
+
+  /* ── outcome reveal ── */
+  .outcome{text-align:center;margin-bottom:20px}
+  .verdict{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:19px;font-weight:700;padding:13px 22px;border-radius:99px;
+  }
+  .verdict.react{background:var(--reaction-bg);color:var(--reaction);border:1.5px solid var(--reaction-line)}
+  .verdict.safe{background:var(--safe-bg);color:#1f7a53;border:1.5px solid var(--safe-line)}
+  @media (prefers-reduced-motion:no-preference){
+    .verdict.react{animation:shake .5s ease}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+  }
+  .feedback{font-size:14px;color:var(--muted);margin-top:12px;font-family:var(--font-mono);letter-spacing:.03em}
+  .feedback .ok{color:var(--safe)}
+  .feedback .no{color:var(--reaction)}
+
+  /* ── rating slider ── */
+  .rate-food{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 26px}
+  .rate-food .emoji{font-size:64px;line-height:1}
+  .rate-food .fname{font-size:22px;font-weight:700;letter-spacing:-.01em}
+  .slider-wrap{margin-top:6px}
+  .readout{text-align:center;margin-bottom:14px}
+  .readout .num{font-family:var(--font-mono);font-size:40px;font-weight:700;color:var(--primary);letter-spacing:-.02em}
+  .readout .unit{font-family:var(--font-mono);font-size:18px;color:var(--muted)}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+    background:linear-gradient(90deg,var(--safe) 0%,#e3e9ea 50%,var(--reaction) 100%);
+    outline:none;
+  }
+  input[type=range]:focus-visible{outline:3px solid var(--primary);outline-offset:4px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--primary);box-shadow:0 2px 6px rgba(20,48,47,.25);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--primary);box-shadow:0 2px 6px rgba(20,48,47,.25);cursor:pointer}
+  .ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:10px;font-family:var(--font-mono);letter-spacing:.02em}
+
+  /* ── results ── */
+  .bars{margin:6px 0 4px}
+  .bar-row{margin-bottom:18px}
+  .bar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:10px}
+  .bar-id{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:650}
+  .bar-id .e{font-size:22px}
+  .tag{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:6px;font-weight:700}
+  .tag.cause{background:#eaf3f2;color:var(--primary)}
+  .tag.control{background:var(--safe-bg);color:#1f7a53}
+  .tag.blocked{background:var(--amber-bg);color:var(--amber)}
+  .bar-val{font-family:var(--font-mono);font-size:15px;font-weight:700}
+  .bar-track{height:16px;border-radius:8px;background:#eef2f3;overflow:hidden}
+  .bar-fill{height:100%;border-radius:8px;transition:width .8s cubic-bezier(.2,.8,.2,1);width:0}
+  .bar-fill.cause{background:var(--primary)}
+  .bar-fill.control{background:var(--safe)}
+  .bar-fill.blocked{background:var(--amber)}
+
+  .gap-callout{
+    margin:18px 0 8px;padding:16px 18px;border-radius:12px;text-align:center;
+    border:1px solid var(--line);
+  }
+  .gap-callout.win{background:var(--amber-bg);border-color:#efd9a6}
+  .gap-callout.flat{background:#f4f8f8}
+  .gap-callout .big{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px}
+  .gap-callout .sub{font-size:14px;color:var(--ink-soft)}
+
+  .sanity{font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+  .sanity span{color:var(--ink)}
+
+  /* ── design table ── */
+  .design{margin:20px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .design table{width:100%;border-collapse:collapse;font-size:14px}
+  .design th{background:#f4f8f8;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  .design td{padding:11px 12px;border-bottom:1px solid var(--line);color:var(--ink-soft)}
+  .design tr:last-child td{border-bottom:none}
+  .design .cue{font-weight:650;color:var(--ink);white-space:nowrap}
+  .r-yes{color:var(--reaction);font-weight:650}
+  .r-no{color:var(--safe);font-weight:650}
+  .r-dash{color:var(--muted)}
+
+  .report{
+    margin:20px 0;padding:16px 18px;border-radius:12px;
+    background:#0f6e6a;color:#eafaf8;
+  }
+  .report .rlabel{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:10px}
+  .report .pair{display:flex;gap:12px}
+  .report .chip{flex:1;background:rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;text-align:center}
+  .report .chip .cn{font-size:13px;font-weight:600;margin-bottom:4px}
+  .report .chip .cv{font-family:var(--font-mono);font-size:26px;font-weight:700}
+
+  details{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--primary);list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";font-size:11px}
+  details[open] summary::before{content:"▾ "}
+  details p{font-size:14px;margin-top:10px}
+  cite{color:var(--muted);font-style:normal;font-size:13px;font-family:var(--font-mono)}
+
+  .spacer-lg{height:26px}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="masthead">
+      <div class="brandmark">
+        <span class="pulse-dot"></span>
+        <b>ALLERGY CLINIC</b>
+      </div>
+      <span class="eyebrow" id="mast-status">Intake</span>
+    </div>
+
+    <!-- INTRO -->
+    <section class="pad" id="scr-intro">
+      <h1>You&rsquo;re the allergist on duty.</h1>
+      <p class="lede">Your patient, <strong>Jordan Reyes</strong>, keeps having allergic reactions after meals &mdash; but nobody knows which foods are to blame.</p>
+      <p>You&rsquo;ll review one meal at a time. For each, predict whether Jordan reacts, then see what actually happened. Watch the patterns closely: by the end, you&rsquo;ll be asked to judge which foods are the real culprits.</p>
+      <div class="chart-note"><b>Your job:</b> figure out, from the meals alone, which individual foods trigger Jordan&rsquo;s reactions.</div>
+      <div class="spacer-lg"></div>
+      <button class="btn btn-primary" id="start-btn">Open the first chart</button>
+    </section>
+
+    <!-- TRIAL -->
+    <section class="pad hidden" id="scr-trial">
+      <div class="progress">
+        <div class="track"><div class="fill" id="trial-fill"></div></div>
+        <span class="counter" id="trial-counter">CASE 01 / 18</span>
+      </div>
+      <div class="prompt-label">Meal on record</div>
+      <div class="plate" id="plate"></div>
+      <div class="q" id="trial-q">Will <span class="pt">Jordan</span> have an allergic reaction?</div>
+      <div id="trial-choices" class="btn-row">
+        <button class="btn btn-react" data-pred="1">Reaction</button>
+        <button class="btn btn-safe" data-pred="0">No reaction</button>
+      </div>
+      <div id="trial-outcome" class="hidden">
+        <div class="outcome">
+          <div class="verdict" id="verdict-badge"></div>
+          <div class="feedback" id="verdict-feedback"></div>
+        </div>
+        <button class="btn btn-primary" id="next-trial">Next chart</button>
+      </div>
+    </section>
+
+    <!-- RATING -->
+    <section class="pad hidden" id="scr-rate">
+      <div class="progress">
+        <div class="track"><div class="fill" id="rate-fill"></div></div>
+        <span class="counter" id="rate-counter">RATING 1 / 6</span>
+      </div>
+      <div class="prompt-label">Clinical judgment &mdash; no feedback</div>
+      <div class="rate-food">
+        <span class="emoji" id="rate-emoji">🫐</span>
+        <span class="fname" id="rate-name">Food</span>
+      </div>
+      <p style="text-align:center;margin-bottom:18px">On its own, how likely is this food to trigger a reaction in Jordan?</p>
+      <div class="readout"><span class="num" id="rate-num">50</span><span class="unit">%</span></div>
+      <div class="slider-wrap">
+        <input type="range" id="rate-slider" min="0" max="100" value="50" step="1" aria-label="Likelihood this food causes a reaction">
+        <div class="ends"><span>Definitely safe</span><span>Definitely causes it</span></div>
+      </div>
+      <div class="spacer-lg"></div>
+      <button class="btn btn-primary" id="rate-next">Lock in rating</button>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="pad hidden" id="scr-results">
+      <span class="eyebrow">Case closed</span>
+      <h1 style="margin-top:8px">The blocking effect</h1>
+      <p class="lede" id="results-lede"></p>
+
+      <div class="spacer-lg"></div>
+      <div class="bars" id="bars"></div>
+
+      <div class="gap-callout" id="gap-callout"></div>
+
+      <div class="report">
+        <div class="rlabel">Report these two to the class tally</div>
+        <div class="pair" id="report-pair"></div>
+      </div>
+
+      <div class="sanity" id="sanity"></div>
+
+      <div class="spacer-lg"></div>
+      <h2>Why it happens</h2>
+      <p>Look at what you actually saw. One food caused reactions from the very start. Later, a <strong>new food was quietly added alongside it</strong> &mdash; and every one of those meals still caused a reaction. But the new food never got the chance to prove itself: its partner already explained everything.</p>
+
+      <div class="design">
+        <table id="design-table"></table>
+      </div>
+
+      <p id="design-caption"></p>
+
+      <details>
+        <summary>The prediction-error account (Rescorla&ndash;Wagner)</summary>
+        <p>Learning tracks <strong>surprise</strong>, not just pairing. When the blocked food first appeared, its partner already predicted the reaction &mdash; so the outcome was fully expected. No surprise, no prediction error, almost nothing learned about the new food (&Delta;V &asymp; 0). In the control pair, <em>both</em> foods were new, so the reaction was a genuine surprise and the associative strength got split between them.</p>
+        <p>This is exactly the result that broke simple contiguity theories: two foods can be paired with an outcome equally often, yet be learned very differently. <cite>Kamin (1969); Rescorla &amp; Wagner (1972); human allergy paradigm after Dickinson, Shanks &amp; Evenden (1984).</cite></p>
+      </details>
+
+      <div class="spacer-lg"></div>
+      <button class="btn btn-primary" id="again-btn">Run it again (new foods)</button>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var FOODS = [
+    {name:"Blueberries",emoji:"🫐"},{name:"Broccoli",emoji:"🥦"},
+    {name:"Rice",emoji:"🍚"},{name:"Banana",emoji:"🍌"},
+    {name:"Carrot",emoji:"🥕"},{name:"Cucumber",emoji:"🥒"},
+    {name:"Grapes",emoji:"🍇"},{name:"Corn",emoji:"🌽"},
+    {name:"Mushroom",emoji:"🍄"},{name:"Tomato",emoji:"🍅"},
+    {name:"Avocado",emoji:"🥑"},{name:"Peach",emoji:"🍑"},
+    {name:"Mango",emoji:"🥭"},{name:"Pear",emoji:"🍐"},
+    {name:"Pineapple",emoji:"🍍"},{name:"Lettuce",emoji:"🥬"}
+  ];
+
+  var state = null;
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for(var i=a.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var t=a[i];a[i]=a[j];a[j]=t;
+    }
+    return a;
+  }
+
+  function buildSession(){
+    var pool = shuffle(FOODS).slice(0,6);
+    // roles
+    var role = {A:pool[0],B:pool[1],C:pool[2],D:pool[3],E:pool[4],F:pool[5]};
+
+    // Phase 1: pretrain A -> reaction; E,F safe. (establishes A as a known cause)
+    var p1 = [];
+    for(var i=0;i<4;i++) p1.push({cues:[role.A],out:true});
+    for(var i=0;i<2;i++) p1.push({cues:[role.E],out:false});
+    for(var i=0;i<2;i++) p1.push({cues:[role.F],out:false});
+    p1 = shuffle(p1);
+
+    // Phase 2: AB -> reaction (B blocked), CD -> reaction (D control); a couple safe fillers
+    var p2 = [];
+    for(var i=0;i<4;i++) p2.push({cues:[role.A,role.B],out:true});
+    for(var i=0;i<4;i++) p2.push({cues:[role.C,role.D],out:true});
+    p2.push({cues:[role.E],out:false});
+    p2.push({cues:[role.F],out:false});
+    p2 = shuffle(p2);
+
+    var trials = p1.concat(p2); // phase order preserved
+
+    // rating order: all six, shuffled
+    var rateOrder = shuffle([role.A,role.B,role.C,role.D,role.E,role.F]);
+
+    return {
+      role:role, trials:trials, rateOrder:rateOrder,
+      ti:0, ri:0, preds:[], ratings:{}
+    };
+  }
+
+  // ---- element refs ----
+  var el = {};
+  ["scr-intro","scr-trial","scr-rate","scr-results",
+   "start-btn","mast-status",
+   "trial-fill","trial-counter","plate","trial-choices","trial-outcome",
+   "verdict-badge","verdict-feedback","next-trial",
+   "rate-fill","rate-counter","rate-emoji","rate-name","rate-num","rate-slider","rate-next",
+   "results-lede","bars","gap-callout","report-pair","sanity","design-table","design-caption",
+   "again-btn"
+  ].forEach(function(id){ el[id]=document.getElementById(id); });
+
+  function show(scr){
+    ["scr-intro","scr-trial","scr-rate","scr-results"].forEach(function(s){
+      el[s].classList.toggle("hidden", s!==scr);
+    });
+    window.scrollTo(0,0);
+  }
+
+  // ---- trials ----
+  function renderTrial(){
+    var t = state.trials[state.ti];
+    el["mast-status"].textContent = "Charts";
+    el["trial-counter"].textContent = "CASE " + String(state.ti+1).padStart(2,"0") + " / " + state.trials.length;
+    el["trial-fill"].style.width = ((state.ti)/state.trials.length*100) + "%";
+
+    el["plate"].innerHTML = "";
+    t.cues.forEach(function(f){
+      var d=document.createElement("div");
+      d.className="food";
+      d.innerHTML='<span class="emoji">'+f.emoji+'</span><span class="fname">'+f.name+'</span>';
+      el["plate"].appendChild(d);
+    });
+
+    el["trial-choices"].classList.remove("hidden");
+    el["trial-outcome"].classList.add("hidden");
+    Array.prototype.forEach.call(el["trial-choices"].children,function(b){b.disabled=false;});
+  }
+
+  function answerTrial(pred){
+    var t = state.trials[state.ti];
+    state.preds.push({pred:pred,out:t.out});
+    Array.prototype.forEach.call(el["trial-choices"].children,function(b){b.disabled=true;});
+    el["trial-choices"].classList.add("hidden");
+
+    var badge = el["verdict-badge"];
+    if(t.out){
+      badge.className="verdict react";
+      badge.innerHTML='<span>🔴</span> Allergic reaction';
+    }else{
+      badge.className="verdict safe";
+      badge.innerHTML='<span>🟢</span> No reaction';
+    }
+    var correct = (pred===1)===t.out;
+    el["verdict-feedback"].innerHTML = correct
+      ? '<span class="ok">✓ your prediction was right</span>'
+      : '<span class="no">✗ not what you predicted</span>';
+
+    el["trial-outcome"].classList.remove("hidden");
+    el["trial-fill"].style.width = ((state.ti+1)/state.trials.length*100) + "%";
+    el["next-trial"].focus();
+  }
+
+  function nextTrial(){
+    state.ti++;
+    if(state.ti>=state.trials.length){ startRating(); }
+    else{ renderTrial(); }
+  }
+
+  // ---- rating ----
+  function startRating(){
+    state.ri=0;
+    show("scr-rate");
+    renderRating();
+  }
+  function renderRating(){
+    var f = state.rateOrder[state.ri];
+    el["mast-status"].textContent = "Assessment";
+    el["rate-counter"].textContent = "RATING " + (state.ri+1) + " / " + state.rateOrder.length;
+    el["rate-fill"].style.width = ((state.ri)/state.rateOrder.length*100) + "%";
+    el["rate-emoji"].textContent = f.emoji;
+    el["rate-name"].textContent = f.name;
+    el["rate-slider"].value = 50;
+    el["rate-num"].textContent = "50";
+  }
+  function nextRating(){
+    var f = state.rateOrder[state.ri];
+    state.ratings[f.name] = parseInt(el["rate-slider"].value,10);
+    state.ri++;
+    if(state.ri>=state.rateOrder.length){ showResults(); }
+    else{ renderRating(); }
+  }
+
+  // ---- results ----
+  function barRow(food, tagClass, tagText, fillClass){
+    var v = state.ratings[food.name];
+    return '<div class="bar-row">'
+      + '<div class="bar-head">'
+      +   '<span class="bar-id"><span class="e">'+food.emoji+'</span>'+food.name
+      +     ' <span class="tag '+tagClass+'">'+tagText+'</span></span>'
+      +   '<span class="bar-val" style="color:var(--'+ (fillClass==='blocked'?'amber':fillClass==='control'?'safe':'primary') +')">'+v+'%</span>'
+      + '</div>'
+      + '<div class="bar-track"><div class="bar-fill '+fillClass+'" data-w="'+v+'"></div></div>'
+      + '</div>';
+  }
+
+  function showResults(){
+    show("scr-results");
+    el["mast-status"].textContent = "Debrief";
+    var r = state.role;
+    var rB = state.ratings[r.B.name], rD = state.ratings[r.D.name];
+    var rA = state.ratings[r.A.name], rC = state.ratings[r.C.name];
+    var rE = state.ratings[r.E.name], rF = state.ratings[r.F.name];
+    var gap = rD - rB;
+
+    el["results-lede"].innerHTML = 'Two foods below &mdash; <strong>'+r.D.name+'</strong> and <strong>'+r.B.name
+      +'</strong> &mdash; were each followed by a reaction the exact same number of times. See how differently you rated them.';
+
+    el["bars"].innerHTML =
+        barRow(r.A,"cause","Obvious cause","cause")
+      + barRow(r.D,"control","Control cue","control")
+      + barRow(r.B,"blocked","Blocked cue","blocked");
+
+    // animate bars
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        Array.prototype.forEach.call(el["bars"].querySelectorAll(".bar-fill"),function(b){
+          b.style.width = b.getAttribute("data-w") + "%";
+        });
+      });
+    });
+
+    var gc = el["gap-callout"];
+    if(gap >= 12){
+      gc.className="gap-callout win";
+      gc.innerHTML='<div class="big">You showed the blocking effect &mdash; a '+gap+'-point gap.</div>'
+        +'<div class="sub">You judged <strong>'+r.B.name+'</strong> a weaker culprit than <strong>'+r.D.name
+        +'</strong>, even though the evidence for each was identical. Prior learning about its partner <strong>blocked</strong> it.</div>';
+    }else if(gap >= 3){
+      gc.className="gap-callout win";
+      gc.innerHTML='<div class="big">A small blocking effect &mdash; a '+gap+'-point gap.</div>'
+        +'<div class="sub">You leaned toward rating <strong>'+r.B.name+'</strong> below <strong>'+r.D.name
+        +'</strong>. Blocking is an average effect, so the class total will show it far more clearly than any one run.</div>';
+    }else{
+      gc.className="gap-callout flat";
+      gc.innerHTML='<div class="big">Your run didn&rsquo;t show blocking this time.</div>'
+        +'<div class="sub">That happens &mdash; it&rsquo;s an effect that emerges in the class average, not every individual. Add your two numbers to the tally and watch the pattern appear across everyone.</div>';
+    }
+
+    el["report-pair"].innerHTML =
+        '<div class="chip"><div class="cn">'+r.D.name+' (control)</div><div class="cv">'+rD+'</div></div>'
+      + '<div class="chip"><div class="cn">'+r.B.name+' (blocked)</div><div class="cv">'+rB+'</div></div>';
+
+    // sanity check on data quality
+    var flags=[];
+    if(rA < 55) flags.push(r.A.name+" (the obvious culprit) came out low");
+    if(rE > 45 || rF > 45) flags.push("a safe food came out high");
+    el["sanity"].innerHTML = flags.length
+      ? '⚠ <span>Heads up:</span> '+flags.join("; ")+'. The effect reads cleanest when the meal patterns fully registered.'
+      : '✓ <span>Check passed:</span> you nailed the obvious culprit ('+r.A.name+', '+rA+'%) and kept the safe foods low ('+r.E.name+' '+rE+'%, '+r.F.name+' '+rF+'%).';
+
+    // design table
+    el["design-table"].innerHTML =
+        '<thead><tr><th>Food</th><th>First half</th><th>Second half</th><th>Outcome</th></tr></thead>'
+      + '<tbody>'
+      + '<tr><td class="cue">'+r.A.emoji+' '+r.A.name+'</td><td>served alone</td><td>served with '+r.B.name+'</td><td class="r-yes">reaction</td></tr>'
+      + '<tr><td class="cue">'+r.B.emoji+' '+r.B.name+'</td><td class="r-dash">&mdash; not yet seen</td><td>added onto '+r.A.name+'</td><td class="r-yes">reaction</td></tr>'
+      + '<tr><td class="cue">'+r.C.emoji+' '+r.C.name+'</td><td class="r-dash">&mdash; not yet seen</td><td>served with '+r.D.name+'</td><td class="r-yes">reaction</td></tr>'
+      + '<tr><td class="cue">'+r.D.emoji+' '+r.D.name+'</td><td class="r-dash">&mdash; not yet seen</td><td>served with '+r.C.name+'</td><td class="r-yes">reaction</td></tr>'
+      + '</tbody>';
+
+    el["design-caption"].innerHTML = '<strong>'+r.B.name+'</strong> and <strong>'+r.D.name
+      +'</strong> each appeared only as a new food added to a partner, and each meal caused a reaction 4 times. '
+      +'The one difference: '+r.B.name+'&rsquo;s partner ('+r.A.name+') was <em>already</em> a known cause, while '+r.D.name
+      +'&rsquo;s partner ('+r.C.name+') was equally new. That single difference is what drives the gap.';
+  }
+
+  // ---- wire up ----
+  el["start-btn"].addEventListener("click",function(){
+    show("scr-trial"); renderTrial();
+  });
+  Array.prototype.forEach.call(el["trial-choices"].children,function(b){
+    b.addEventListener("click",function(){ answerTrial(parseInt(b.getAttribute("data-pred"),10)); });
+  });
+  el["next-trial"].addEventListener("click",nextTrial);
+  el["rate-slider"].addEventListener("input",function(){ el["rate-num"].textContent = el["rate-slider"].value; });
+  el["rate-next"].addEventListener("click",nextRating);
+  el["again-btn"].addEventListener("click",function(){ state=buildSession(); show("scr-intro"); el["mast-status"].textContent="Intake"; });
+
+  // keyboard: R / N for react / no-react during choice
+  document.addEventListener("keydown",function(e){
+    if(el["scr-trial"].classList.contains("hidden")) return;
+    if(!el["trial-choices"].classList.contains("hidden")){
+      if(e.key==="r"||e.key==="R") answerTrial(1);
+      if(e.key==="n"||e.key==="N") answerTrial(0);
+    }else if(e.key==="Enter"){ nextTrial(); }
+  });
+
+  // init
+  state = buildSession();
+})();
+</script>
+</body>
+</html>
