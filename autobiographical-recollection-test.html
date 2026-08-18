@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autobiographical Recollection Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --crimson:#8C1D2C;
+    --crimson-deep:#6E1422;
+    --amber:#C8881F;
+    --amber-soft:#E7C788;
+    --paper:#FAF7F1;
+    --ink:#2B2622;
+    --ink-soft:#6A625A;
+    --rule:#E2D9CB;
+    --track:#EFE7D8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Source Serif 4",Georgia,serif;
+    font-size:17px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:34px 22px 56px;}
+  .eyebrow{
+    font-family:"Source Serif 4",serif;
+    text-transform:uppercase;
+    letter-spacing:.18em;
+    font-size:12px;
+    font-weight:600;
+    color:var(--amber);
+    margin:0 0 8px;
+  }
+  h1{
+    font-family:"Playfair Display",Georgia,serif;
+    font-weight:700;
+    font-size:clamp(28px,5vw,40px);
+    line-height:1.1;
+    margin:0 0 14px;
+    color:var(--crimson-deep);
+  }
+  .lede{margin:0 0 8px;color:var(--ink-soft);}
+  .scale-key{
+    margin:18px 0 4px;
+    padding:14px 16px;
+    background:#fff;
+    border:1px solid var(--rule);
+    border-left:4px solid var(--amber);
+    border-radius:4px;
+    font-size:15px;
+    color:var(--ink-soft);
+  }
+  .scale-key strong{color:var(--ink);font-weight:600;}
+  .progress{
+    position:sticky;top:0;z-index:5;
+    background:linear-gradient(var(--paper),var(--paper) 70%,rgba(250,247,241,0));
+    padding:10px 0 6px;
+    margin-top:18px;
+    font-size:13px;color:var(--ink-soft);
+  }
+  .progress-bar{height:6px;background:var(--track);border-radius:99px;overflow:hidden;margin-top:6px;}
+  .progress-fill{height:100%;width:0;background:var(--crimson);transition:width .25s ease;}
+  @media (prefers-reduced-motion:reduce){.progress-fill,.bar-fill{transition:none;}}
+
+  .item{
+    padding:18px 0;
+    border-bottom:1px solid var(--rule);
+  }
+  .item.unanswered-flag{background:rgba(140,29,44,.04);border-radius:6px;padding-left:12px;padding-right:12px;}
+  .item .q{margin:0 0 12px;font-size:17px;}
+  .item .num{color:var(--amber);font-weight:600;font-variant-numeric:tabular-nums;margin-right:6px;}
+
+  fieldset{border:0;margin:0;padding:0;}
+  legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);}
+  .track{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:6px;
+    margin:0;
+  }
+  .opt{position:relative;}
+  .opt input{
+    position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;top:0;left:0;
+  }
+  .opt label{
+    display:flex;align-items:center;justify-content:center;
+    height:46px;border:1.5px solid var(--rule);border-radius:6px;
+    background:#fff;cursor:pointer;font-weight:600;color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+    transition:background .12s ease,border-color .12s ease,color .12s ease;
+  }
+  .opt input:hover + label{border-color:var(--amber);}
+  .opt input:focus-visible + label{outline:3px solid var(--amber-soft);outline-offset:2px;}
+  .opt input:checked + label{background:var(--crimson);border-color:var(--crimson);color:#fff;}
+  .anchors{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-top:7px;letter-spacing:.02em;}
+
+  .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:26px;}
+  button{
+    font-family:"Source Serif 4",serif;font-size:16px;font-weight:600;cursor:pointer;
+    border-radius:6px;padding:12px 22px;border:1.5px solid transparent;
+  }
+  .btn-primary{background:var(--crimson);color:#fff;border-color:var(--crimson);}
+  .btn-primary:hover{background:var(--crimson-deep);border-color:var(--crimson-deep);}
+  .btn-ghost{background:transparent;color:var(--crimson);border-color:var(--rule);}
+  .btn-ghost:hover{border-color:var(--crimson);}
+  button:focus-visible{outline:3px solid var(--amber-soft);outline-offset:2px;}
+  .note{font-size:13px;color:var(--ink-soft);}
+
+  .results{margin-top:34px;padding-top:6px;}
+  .results[hidden]{display:none;}
+  .results h2{
+    font-family:"Playfair Display",serif;font-weight:700;font-size:26px;
+    color:var(--crimson-deep);margin:0 0 6px;
+  }
+  .results .sub{color:var(--ink-soft);margin:0 0 22px;font-size:15px;}
+  .dim{padding:16px 0;border-top:1px solid var(--rule);}
+  .dim:last-of-type{border-bottom:1px solid var(--rule);}
+  .dim-head{display:flex;justify-content:space-between;align-items:baseline;gap:14px;}
+  .dim-name{font-family:"Playfair Display",serif;font-weight:600;font-size:19px;color:var(--ink);}
+  .dim-score{font-variant-numeric:tabular-nums;font-weight:600;color:var(--crimson);white-space:nowrap;}
+  .dim-score span{color:var(--ink-soft);font-weight:400;font-size:14px;}
+  .dim-desc{margin:6px 0 10px;font-size:15px;color:var(--ink-soft);}
+  .bar{height:10px;background:var(--track);border-radius:99px;overflow:hidden;}
+  .bar-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--amber),var(--crimson));transition:width .6s ease;}
+
+  .reflect{margin-top:30px;padding:20px 22px;background:#fff;border:1px solid var(--rule);border-radius:6px;}
+  .reflect h3{font-family:"Playfair Display",serif;font-weight:600;font-size:18px;margin:0 0 10px;color:var(--crimson-deep);}
+  .reflect ul{margin:0;padding-left:20px;}
+  .reflect li{margin:0 0 8px;}
+
+  footer{margin-top:34px;font-size:12.5px;line-height:1.5;color:var(--ink-soft);border-top:1px solid var(--rule);padding-top:16px;}
+  footer em{font-style:italic;}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <p class="eyebrow">PSY 333 · Module 5 · Conscious and Unconscious Thought</p>
+  <h1>The Autobiographical Recollection Test</h1>
+  <p class="lede">People differ not only in what they remember but in how remembering feels. Some relive the past as if traveling back into it; others recall the same events as flat summaries. This short self-report measures seven of those qualities.</p>
+
+  <div class="scale-key">
+    Read each statement and rate how well it describes the way you remember events from your past. Answer honestly, thinking about your past-event memories in general. <strong>1 means strongly disagree, 7 means strongly agree.</strong>
+  </div>
+
+  <div class="progress" aria-hidden="true">
+    <span id="progress-text">0 of 21 answered</span>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+
+  <form id="art-form"></form>
+
+  <div class="actions">
+    <button type="button" class="btn-primary" id="score-btn">See my results</button>
+    <button type="button" class="btn-ghost" id="reset-btn">Start over</button>
+    <span class="note" id="action-note"></span>
+  </div>
+
+  <section class="results" id="results" hidden aria-live="polite">
+    <h2>Your seven memory qualities</h2>
+    <p class="sub">Each quality is the sum of three items, so scores range from 3 to 21. Higher means that quality is more prominent in how you remember. There is no good or bad profile here, only differences worth noticing.</p>
+    <div id="dims"></div>
+
+    <div class="reflect">
+      <h3>Take it further</h3>
+      <ul>
+        <li>Do these scores match how you would describe thinking back to a recent birthday or a conversation from last week?</li>
+        <li>Would your profile look the same for a happy memory and a painful one, or would some qualities shift?</li>
+        <li>Chapter 15 asks what consciousness is for. If two people share an experience but score very differently here, what does that say about how private the act of remembering really is?</li>
+        <li>How might someone who scores high on reliving and vividness rely on their memory differently from someone who scores low, say, as a witness, a storyteller, or a student studying for an exam?</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    Scale items from Berntsen, D., Hoyle, R. H., &amp; Rubin, D. C. (2019). The Autobiographical Recollection Test (ART): A measure of individual differences in autobiographical memory. <em>Journal of Applied Research in Memory and Cognition, 8</em>(3), 305–318. The Autobiographical Recollection Test © 2019 Berntsen, Hoyle, &amp; Rubin. Used by permission of the authors and the Society for Applied Research in Memory and Cognition. This page reproduces the instrument for classroom use only. Your responses are scored in your browser and are not stored or sent anywhere.
+  </footer>
+</main>
+
+<script>
+(function(){
+  // Verbatim ART items (order as published). Do not paraphrase: validity depends on exact wording.
+  var ITEMS = [
+    "My memories of past events have lots of details.",
+    "My memories of past events come to me as good stories or descriptions.",
+    "While remembering past events, it is as if I am reliving them.",
+    "I often think back to past events in my mind and think or talk about them.",
+    "In my memories of past events, I remember where the actions, objects, and people are located in the events.",
+    "While remembering past events, I can see them in my mind.",
+    "My memories of past events are a central part of my life story.",
+    "My memories of past events are vivid.",
+    "My memories of past events are coherent and connected, not a collection of isolated, disconnected fragments.",
+    "While remembering past events, it is as if I am mentally traveling back to the time they occurred.",
+    "My memories of past events often pop into my mind by themselves\u2014without me consciously trying to remember them.",
+    "In my memories of past events, I remember where I am in relation to the individual things in the events.",
+    "While remembering past events, I can see with my mind\u2019s eye what took place.",
+    "My memories of past events are part of my identity.",
+    "My memories of past events are clear, not fuzzy or clouded.",
+    "My memories of past events come to me complete, not in pieces with missing bits.",
+    "While remembering past events, it is as if I am experiencing the same general atmosphere again.",
+    "After an event has happened, I often willfully and deliberately think back to it in my mind and try to remember it.",
+    "In my memories of past events, I remember the layout of the broader setting in which the events are located.",
+    "My memories of past events have clear visual details.",
+    "My memories of past events are a reference point for the way I understand myself and the world."
+  ];
+
+  // Subscales: item numbers are 1-indexed as published.
+  var DIMENSIONS = [
+    {name:"Reliving", items:[3,10,17], desc:"How much you feel you are back inside an event, mentally traveling to the time it happened, rather than viewing it from the outside."},
+    {name:"Vividness", items:[1,8,15], desc:"How rich, clear, and detailed your memories feel."},
+    {name:"Visual imagery", items:[6,13,20], desc:"How much your memories arrive as pictures you can see in your mind's eye."},
+    {name:"Scene / spatial layout", items:[5,12,19], desc:"How much you recover where things and people were positioned, the layout of the setting."},
+    {name:"Narrative coherence", items:[2,9,16], desc:"Whether memories come as connected, complete stories or as scattered fragments."},
+    {name:"Life story", items:[7,14,21], desc:"How central your memories feel to your identity and your sense of who you are."},
+    {name:"Rehearsal", items:[4,11,18], desc:"How often past events come back to you, whether on their own or because you deliberately revisit them."}
+  ];
+
+  var form = document.getElementById('art-form');
+  var anchorsHTML = '<div class="anchors"><span>Strongly disagree</span><span>Strongly agree</span></div>';
+
+  ITEMS.forEach(function(text, idx){
+    var n = idx + 1;
+    var item = document.createElement('div');
+    item.className = 'item';
+    item.id = 'item-' + n;
+    var opts = '';
+    for(var v=1; v<=7; v++){
+      var id = 'q'+n+'_'+v;
+      opts += '<div class="opt">'
+            + '<input type="radio" name="q'+n+'" id="'+id+'" value="'+v+'">'
+            + '<label for="'+id+'">'+v+'</label>'
+            + '</div>';
+    }
+    item.innerHTML =
+      '<p class="q"><span class="num">'+n+'.</span>'+text+'</p>'
+      + '<fieldset><legend>Item '+n+': '+text+'</legend>'
+      + '<div class="track">'+opts+'</div>'
+      + anchorsHTML
+      + '</fieldset>';
+    form.appendChild(item);
+  });
+
+  var fill = document.getElementById('progress-fill');
+  var ptext = document.getElementById('progress-text');
+
+  function answeredCount(){
+    var c = 0;
+    for(var n=1; n<=21; n++){ if(form.querySelector('input[name="q'+n+'"]:checked')) c++; }
+    return c;
+  }
+  function updateProgress(){
+    var c = answeredCount();
+    var pct = Math.round((c/21)*100);
+    fill.style.width = pct + '%';
+    ptext.textContent = c + ' of 21 answered';
+  }
+  form.addEventListener('change', function(e){
+    if(e.target && e.target.name){
+      var it = document.getElementById('item-' + e.target.name.slice(1));
+      if(it) it.classList.remove('unanswered-flag');
+    }
+    updateProgress();
+  });
+
+  function val(n){
+    var sel = form.querySelector('input[name="q'+n+'"]:checked');
+    return sel ? parseInt(sel.value,10) : null;
+  }
+
+  document.getElementById('score-btn').addEventListener('click', function(){
+    var missing = [];
+    for(var n=1; n<=21; n++){ if(val(n)===null) missing.push(n); }
+    document.querySelectorAll('.item').forEach(function(el){ el.classList.remove('unanswered-flag'); });
+    var note = document.getElementById('action-note');
+
+    if(missing.length){
+      missing.forEach(function(n){
+        var it = document.getElementById('item-'+n);
+        if(it) it.classList.add('unanswered-flag');
+      });
+      note.textContent = missing.length + ' item' + (missing.length>1?'s':'') + ' still need a rating.';
+      var first = document.getElementById('item-'+missing[0]);
+      if(first) first.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    note.textContent = '';
+
+    var dimsEl = document.getElementById('dims');
+    dimsEl.innerHTML = '';
+    DIMENSIONS.forEach(function(d){
+      var sum = d.items.reduce(function(a,i){ return a + val(i); }, 0);
+      var pct = Math.round(((sum-3)/18)*100); // 3..21 mapped to 0..100
+      var row = document.createElement('div');
+      row.className = 'dim';
+      row.innerHTML =
+        '<div class="dim-head"><span class="dim-name">'+d.name+'</span>'
+        + '<span class="dim-score">'+sum+' <span>/ 21</span></span></div>'
+        + '<p class="dim-desc">'+d.desc+'</p>'
+        + '<div class="bar"><div class="bar-fill" data-pct="'+pct+'"></div></div>';
+      dimsEl.appendChild(row);
+    });
+
+    var results = document.getElementById('results');
+    results.hidden = false;
+    results.scrollIntoView({behavior:'smooth', block:'start'});
+    requestAnimationFrame(function(){
+      setTimeout(function(){
+        document.querySelectorAll('.bar-fill').forEach(function(b){ b.style.width = b.getAttribute('data-pct') + '%'; });
+      }, 60);
+    });
+  });
+
+  document.getElementById('reset-btn').addEventListener('click', function(){
+    form.reset();
+    document.getElementById('results').hidden = true;
+    document.getElementById('action-note').textContent = '';
+    document.querySelectorAll('.item').forEach(function(el){ el.classList.remove('unanswered-flag'); });
+    updateProgress();
+    document.querySelector('h1').scrollIntoView({behavior:'smooth', block:'start'});
+  });
+
+  updateProgress();
+})();
+</script>
+</body>
+</html>
