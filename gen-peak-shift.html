@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Harvest — A Generalization Lab</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#13141b;
+    --panel:#1b1d27;
+    --panel2:#232634;
+    --line:#303446;
+    --line-soft:#262a39;
+    --text:#eef0f6;
+    --muted:#969cb2;
+    --dim:#666c85;
+    --gold:#f2b53c;
+    --gold-soft:#ffd684;
+    --ui:#6f8cff;
+    --ui-dim:#3a4576;
+    --good:#43d19e;
+    --neutral-fill:#cdd2df;
+    --sminus:#e0687a;
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --radius:16px;
+  }
+  html,body{height:100%}
+  body{
+    font-family:var(--font-sans);
+    background:radial-gradient(130% 100% at 50% -20%, #1c1e2b 0%, var(--bg) 60%);
+    color:var(--text);
+    min-height:100%;
+    display:flex;align-items:flex-start;justify-content:center;
+    padding:clamp(12px,3.5vw,36px) 16px 60px;
+    line-height:1.5;-webkit-font-smoothing:antialiased;
+    user-select:none;-webkit-user-select:none;
+  }
+  .app{width:100%;max-width:560px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 24px 60px -24px rgba(0,0,0,.6);overflow:hidden}
+
+  .masthead{display:flex;align-items:center;justify-content:space-between;
+    padding:13px 18px;border-bottom:1px solid var(--line-soft);background:#191b25}
+  .brandmark{display:flex;align-items:center;gap:9px;font-size:12.5px;font-weight:600;letter-spacing:.02em}
+  .brandmark .sig{width:16px;height:16px;border-radius:5px;
+    background:conic-gradient(from 0deg,#e0687a,#f2b53c,#43d19e,#6f8cff,#e0687a)}
+  .eyebrow{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .score{font-family:var(--font-mono);font-size:13px;color:var(--gold);font-weight:700}
+  .score.hidden{visibility:hidden}
+
+  .pad{padding:clamp(20px,4.5vw,32px)}
+  h1{font-size:clamp(23px,5vw,30px);line-height:1.12;letter-spacing:-.02em;font-weight:700;margin-bottom:13px}
+  h2{font-size:19px;font-weight:700;letter-spacing:-.01em;margin-bottom:9px}
+  p{color:var(--muted);font-size:15px}
+  p+p{margin-top:11px}
+  .lede{font-size:16px;color:#c7cbdb}
+  strong{color:var(--text);font-weight:650}
+  em{color:var(--gold-soft);font-style:normal}
+
+  .btn{font-family:inherit;font-size:16px;font-weight:600;border:none;border-radius:12px;
+    padding:15px 22px;cursor:pointer;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:transform .08s ease,filter .15s ease,background .15s}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible{outline:3px solid var(--ui);outline-offset:2px}
+  .btn-primary{background:var(--ui);color:#fff}
+  .btn-primary:hover{background:#5f7cf0}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn-ghost:hover{background:var(--panel2)}
+
+  /* ── setup controls ── */
+  .field{margin-bottom:20px}
+  .field-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+  .seg{display:grid;gap:8px}
+  .seg.three{grid-template-columns:1fr 1fr 1fr}
+  .seg.two{grid-template-columns:1fr 1fr}
+  .opt{background:var(--panel2);border:1.5px solid var(--line);border-radius:11px;padding:13px 10px;
+    cursor:pointer;text-align:center;transition:border-color .15s,background .15s}
+  .opt:hover{border-color:var(--ui-dim)}
+  .opt.on{border-color:var(--ui);background:#20263f}
+  .opt .ot{font-size:14.5px;font-weight:650;color:var(--text)}
+  .opt .od{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .opt .glyph{height:34px;display:flex;align-items:center;justify-content:center;margin-bottom:7px}
+
+  details.adv{margin-top:4px;border-top:1px solid var(--line-soft);padding-top:12px}
+  details.adv summary{cursor:pointer;font-size:13px;color:var(--muted);list-style:none;font-weight:600}
+  details.adv summary::-webkit-details-marker{display:none}
+  details.adv summary::before{content:"▸ ";font-size:10px}
+  details.adv[open] summary::before{content:"▾ "}
+  .adv-body{margin-top:14px}
+
+  /* ── stimulus stage ── */
+  .stage-wrap{display:flex;flex-direction:column;align-items:center}
+  .timerbar{width:100%;height:5px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-bottom:20px}
+  .timerbar .t{height:100%;background:var(--ui);width:100%;transform-origin:left}
+  .progress-mini{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;color:var(--dim);margin-bottom:14px;text-transform:uppercase}
+  .stimzone{width:100%;height:280px;border-radius:16px;background:
+      repeating-linear-gradient(45deg,#171923,#171923 12px,#191b26 12px,#191b26 24px);
+    border:1px solid var(--line-soft);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;position:relative;overflow:hidden;touch-action:manipulation}
+  .stimzone.dead{cursor:default;opacity:.5}
+  .stim{will-change:transform}
+  .stim.pop{}
+  @media (prefers-reduced-motion:no-preference){
+    .stim.pop{animation:pop .09s ease}
+    @keyframes pop{0%{transform:scale(1)}50%{transform:scale(.94)}100%{transform:scale(1)}}
+  }
+  .swatch{width:150px;height:150px;border-radius:18px}
+  .bar-stim{width:150px;height:20px;border-radius:6px;background:var(--neutral-fill)}
+  .circle-stim{border-radius:50%;background:var(--neutral-fill)}
+  .reward-fly{position:absolute;font-family:var(--font-mono);font-weight:700;color:var(--gold);
+    font-size:22px;pointer-events:none}
+  @media (prefers-reduced-motion:no-preference){
+    .reward-fly{animation:fly .6s ease-out forwards}
+    @keyframes fly{0%{opacity:0;transform:translateY(0) scale(.8)}20%{opacity:1}100%{opacity:0;transform:translateY(-46px) scale(1.1)}}
+  }
+  .tap-hint{position:absolute;bottom:14px;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+  .stage-caption{margin-top:18px;font-size:14px;color:var(--muted);text-align:center;min-height:20px}
+
+  .spacer{height:22px}
+  .spacer-lg{height:28px}
+  .hidden{display:none}
+
+  /* ── results chart ── */
+  .chart{margin:8px 0 4px;padding:20px 8px 8px;background:var(--panel2);border:1px solid var(--line);border-radius:14px}
+  .plot{display:flex;align-items:flex-end;justify-content:center;gap:clamp(4px,1.6vw,10px);height:180px;padding:0 6px}
+  .col{flex:1;max-width:44px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative}
+  .col .bar{width:100%;max-width:30px;border-radius:5px 5px 2px 2px;background:var(--ui);
+    transition:height .7s cubic-bezier(.2,.8,.2,1);height:0;min-height:2px}
+  .col .bar.peak{background:var(--gold)}
+  .marker{position:absolute;top:-22px;font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:.06em;
+    padding:2px 6px;border-radius:5px;white-space:nowrap}
+  .marker.splus{background:rgba(111,140,255,.16);color:#9db0ff}
+  .marker.sminus{background:rgba(224,104,122,.16);color:var(--sminus)}
+  .marker.peak{background:rgba(242,181,60,.16);color:var(--gold-soft);top:-40px}
+  .axis{display:flex;justify-content:center;gap:clamp(4px,1.6vw,10px);padding:10px 6px 0}
+  .axis .tick{flex:1;max-width:44px;display:flex;justify-content:center}
+  .mini{}
+  .mini-swatch{width:22px;height:22px;border-radius:5px}
+  .mini-bar{width:26px;height:6px;border-radius:3px;background:var(--neutral-fill)}
+  .mini-circle{border-radius:50%;background:var(--neutral-fill)}
+  .axis-label{text-align:center;font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:12px}
+  .yaxis-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;text-align:center}
+
+  .verdict-box{margin:20px 0 6px;padding:17px 18px;border-radius:12px;border:1px solid var(--line)}
+  .verdict-box.shift{background:rgba(242,181,60,.08);border-color:rgba(242,181,60,.3)}
+  .verdict-box.flat{background:var(--panel2)}
+  .verdict-box.gen{background:rgba(111,140,255,.08);border-color:rgba(111,140,255,.3)}
+  .verdict-box .vt{font-size:16.5px;font-weight:700;margin-bottom:6px}
+  .verdict-box .vs{font-size:14px;color:var(--muted)}
+  .verdict-box .vs strong{color:var(--text)}
+
+  .report{margin:18px 0;padding:15px 18px;border-radius:12px;background:var(--gold);color:#3a2a00}
+  .report .rl{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.7;margin-bottom:6px}
+  .report .rv{font-size:15px;font-weight:650}
+  .report .rv b{font-family:var(--font-mono);font-size:22px}
+
+  details.explain{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  details.explain summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--ui);list-style:none}
+  details.explain summary::-webkit-details-marker{display:none}
+  details.explain summary::before{content:"▸ ";font-size:11px}
+  details.explain[open] summary::before{content:"▾ "}
+  details.explain p{font-size:14px;margin-top:10px}
+  cite{color:var(--dim);font-style:normal;font-size:12.5px;font-family:var(--font-mono)}
+  .btn-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="masthead">
+      <div class="brandmark"><span class="sig"></span> THE HARVEST</div>
+      <span class="score hidden" id="score">0</span>
+      <span class="eyebrow" id="mast" style="display:none">Setup</span>
+    </div>
+
+    <!-- SETUP -->
+    <section class="pad" id="scr-setup">
+      <h1>Set up the field.</h1>
+      <p class="lede">You&rsquo;ll train a response to a rewarded patch, then see how that response spreads to patches you were never trained on. Pick what varies across the field.</p>
+      <div class="spacer-lg"></div>
+
+      <div class="field">
+        <div class="field-label">Stimulus dimension</div>
+        <div class="seg three" id="dim-seg">
+          <div class="opt on" data-dim="hue">
+            <div class="glyph"><div style="width:30px;height:30px;border-radius:8px;background:hsl(120,68%,52%)"></div></div>
+            <div class="ot">Hue</div><div class="od">color</div>
+          </div>
+          <div class="opt" data-dim="tilt">
+            <div class="glyph"><div style="width:34px;height:8px;border-radius:4px;background:var(--neutral-fill);transform:rotate(40deg)"></div></div>
+            <div class="ot">Tilt</div><div class="od">line angle</div>
+          </div>
+          <div class="opt" data-dim="size">
+            <div class="glyph"><div style="width:26px;height:26px;border-radius:50%;background:var(--neutral-fill)"></div></div>
+            <div class="ot">Size</div><div class="od">diameter</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Training condition</div>
+        <div class="seg two" id="cond-seg">
+          <div class="opt on" data-cond="disc">
+            <div class="ot">Discrimination</div><div class="od">S+ vs S&minus; &rarr; peak shift</div>
+          </div>
+          <div class="opt" data-cond="single">
+            <div class="ot">Single stimulus</div><div class="od">S+ only &rarr; plain gradient</div>
+          </div>
+        </div>
+      </div>
+
+      <details class="adv">
+        <summary>Advanced</summary>
+        <div class="adv-body">
+          <div class="field-label">Which side is S&minus; on? <span id="sminus-note" style="text-transform:none;letter-spacing:0;color:var(--dim)">(discrimination only)</span></div>
+          <div class="seg two" id="side-seg">
+            <div class="opt on" data-side="high"><div class="ot">Upper side</div><div class="od">peak shifts down</div></div>
+            <div class="opt" data-side="low"><div class="ot">Lower side</div><div class="od">peak shifts up</div></div>
+          </div>
+        </div>
+      </details>
+
+      <div class="spacer"></div>
+      <button class="btn btn-primary" id="to-instr">Enter the field</button>
+    </section>
+
+    <!-- INSTRUCTIONS -->
+    <section class="pad hidden" id="scr-instr">
+      <h1>Harvest what pays.</h1>
+      <p class="lede">Patches will appear one at a time. <strong>Tap a patch as fast as you like</strong> while it&rsquo;s on screen &mdash; some patches drop rewards when you harvest them, some drop nothing.</p>
+      <p>You won&rsquo;t be told which is which. Figure it out by harvesting, and pull in as many rewards as you can before the field closes.</p>
+      <div class="spacer-lg"></div>
+      <button class="btn btn-primary" id="to-train">Start harvesting</button>
+    </section>
+
+    <!-- TRIAL (shared by training + test) -->
+    <section class="pad hidden" id="scr-trial">
+      <div class="stage-wrap">
+        <div class="timerbar"><div class="t" id="timer"></div></div>
+        <div class="progress-mini" id="trial-progress">HARVEST</div>
+        <div class="stimzone" id="stimzone">
+          <div class="stim" id="stim"></div>
+          <div class="tap-hint" id="tap-hint">tap to harvest</div>
+        </div>
+        <div class="stage-caption" id="stage-caption"></div>
+      </div>
+    </section>
+
+    <!-- BRIDGE to test -->
+    <section class="pad hidden" id="scr-bridge">
+      <h1>The field&rsquo;s gone quiet.</h1>
+      <p class="lede">No more rewards are dropping anywhere &mdash; the harvest is over. But a fresh spread of patches is coming through, some you&rsquo;ve never seen.</p>
+      <p><strong>Keep harvesting on instinct.</strong> Go after whatever looks worth your effort.</p>
+      <div class="spacer-lg"></div>
+      <button class="btn btn-primary" id="to-test">Bring on the field</button>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="pad hidden" id="scr-results">
+      <span class="eyebrow" style="display:block;margin-bottom:8px">Your gradient</span>
+      <h1 id="res-title">Where your response landed</h1>
+      <p class="lede" id="res-lede"></p>
+
+      <div class="spacer"></div>
+      <div class="yaxis-label">Harvest effort (taps)</div>
+      <div class="chart">
+        <div class="plot" id="plot"></div>
+        <div class="axis" id="axis"></div>
+      </div>
+      <div class="axis-label" id="axis-label"></div>
+
+      <div class="verdict-box" id="verdict"></div>
+
+      <div class="report" id="report"></div>
+
+      <div class="spacer"></div>
+      <h2 id="explain-h">What you&rsquo;re looking at</h2>
+      <p id="explain-p"></p>
+
+      <details class="explain" id="spence-block">
+        <summary>The excitation&ndash;minus&ndash;inhibition account (Spence)</summary>
+        <p>Training S+ builds an <strong>excitatory gradient</strong> peaked on S+; training S&minus; (no reward) builds an <strong>inhibitory gradient</strong> peaked on S&minus;. Your responding to any patch is roughly excitation minus inhibition. Because the inhibitory dip sits on the S&minus; side, it drags the net peak <em>away</em> from S&minus; &mdash; landing it on a patch that was never rewarded during training.</p>
+        <p>That&rsquo;s the counterintuitive part: the animal (or student) responds <em>most</em> to something it was never trained on. Simple &ldquo;it learned to respond to S+&rdquo; can&rsquo;t explain it. <cite>Guttman &amp; Kalish (1956); Hanson (1959); Spence (1937).</cite></p>
+      </details>
+
+      <div class="spacer"></div>
+      <div class="btn-row2">
+        <button class="btn btn-ghost" id="again-same">Run again</button>
+        <button class="btn btn-primary" id="again-setup">Change setup</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var N = 9;                 // continuum length (indices 0..8)
+  var SPLUS = 4;             // trained/reinforced index (center)
+  var TRAIN_PLUS = 8, TRAIN_MINUS = 8, TRAIN_SINGLE = 16;
+  var TEST_REPS = 3;
+  var WIN_TRAIN = 2500, WIN_TEST = 2000, GAP = 550;
+
+  var cfg = { dim:"hue", cond:"disc", side:"high" };
+  var S = null;
+
+  function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+  // ---- stimulus rendering per dimension ----
+  function hueOf(i){ return Math.round(i*30); }              // 0..240 deg
+  function angleOf(i){ return i*20; }                        // 0..160 deg
+  function sizeOf(i){ return 44 + i*17; }                    // 44..180 px
+
+  function renderStim(node, i, mini){
+    node.className = mini ? "mini" : "stim";
+    node.style.cssText = "";
+    var el;
+    if(cfg.dim==="hue"){
+      el = document.createElement("div");
+      el.className = mini ? "mini-swatch" : "swatch";
+      el.style.background = "hsl("+hueOf(i)+",68%,52%)";
+    }else if(cfg.dim==="tilt"){
+      el = document.createElement("div");
+      el.className = mini ? "mini-bar" : "bar-stim";
+      el.style.transform = "rotate("+angleOf(i)+"deg)";
+    }else{ // size
+      el = document.createElement("div");
+      var d = mini ? Math.round(10 + i*2.2) : sizeOf(i);
+      el.className = mini ? "mini-circle" : "circle-stim";
+      el.style.width = d+"px"; el.style.height = d+"px";
+    }
+    node.innerHTML = "";
+    node.appendChild(el);
+    return el;
+  }
+
+  // ---- build a session ----
+  function build(){
+    var sMinus = null;
+    if(cfg.cond==="disc") sMinus = (cfg.side==="high") ? 6 : 2;
+
+    var train = [];
+    if(cfg.cond==="single"){
+      for(var i=0;i<TRAIN_SINGLE;i++) train.push({v:SPLUS, rf:true});
+    }else{
+      for(var i=0;i<TRAIN_PLUS;i++) train.push({v:SPLUS, rf:true});
+      for(var i=0;i<TRAIN_MINUS;i++) train.push({v:sMinus, rf:false});
+    }
+    train = shuffle(train);
+
+    var test = [];
+    for(var v=0;v<N;v++){ for(var r=0;r<TEST_REPS;r++) test.push({v:v, rf:false, test:true}); }
+    test = shuffle(test);
+
+    var counts = []; for(var v=0;v<N;v++) counts.push([]);
+
+    return { sPlus:SPLUS, sMinus:sMinus, train:train, test:test,
+             counts:counts, ti:0, phase:"train", score:0, taps:0, lastPay:0 };
+  }
+
+  // ---- element refs ----
+  var el={};
+  ["scr-setup","scr-instr","scr-trial","scr-bridge","scr-results",
+   "score","mast","to-instr","to-train","to-test","again-same","again-setup",
+   "timer","trial-progress","stimzone","stim","tap-hint","stage-caption",
+   "plot","axis","axis-label","res-title","res-lede","verdict","report",
+   "explain-h","explain-p","dim-seg","cond-seg","side-seg","sminus-note"
+  ].forEach(function(id){el[id]=document.getElementById(id);});
+
+  function show(scr){
+    ["scr-setup","scr-instr","scr-trial","scr-bridge","scr-results"].forEach(function(s){
+      el[s].classList.toggle("hidden", s!==scr);
+    });
+    window.scrollTo(0,0);
+  }
+
+  // ---- setup interactions ----
+  function wireSeg(seg, key){
+    Array.prototype.forEach.call(seg.children,function(opt){
+      opt.addEventListener("click",function(){
+        Array.prototype.forEach.call(seg.children,function(o){o.classList.remove("on");});
+        opt.classList.add("on");
+        cfg[key]=opt.getAttribute("data-"+key);
+        if(key==="cond"){
+          var disabled = (cfg.cond!=="disc");
+          el["side-seg"].style.opacity = disabled?".4":"1";
+          el["side-seg"].style.pointerEvents = disabled?"none":"auto";
+        }
+      });
+    });
+  }
+  wireSeg(el["dim-seg"],"dim");
+  wireSeg(el["cond-seg"],"cond");
+  wireSeg(el["side-seg"],"side");
+
+  // ---- trial engine ----
+  var winTimer=null, tickRAF=null, active=false;
+
+  function startTrial(){
+    var list = (S.phase==="train") ? S.train : S.test;
+    var t = list[S.ti];
+    var win = (S.phase==="train") ? WIN_TRAIN : WIN_TEST;
+    S.taps = 0; S.lastPay = 0; active = true;
+
+    el["score"].classList.toggle("hidden", S.phase!=="train");
+    el["mast"].style.display="none";
+    el["trial-progress"].textContent = (S.phase==="train")
+      ? "HARVEST  ·  "+(S.ti+1)+" / "+list.length
+      : "OPEN FIELD  ·  "+(S.ti+1)+" / "+list.length;
+    el["tap-hint"].style.display = "block";
+    el["stage-caption"].textContent = "";
+    el["stimzone"].classList.remove("dead");
+
+    renderStim(el["stim"], t.v, false);
+
+    // timer bar animation
+    el["timer"].style.transition="none";
+    el["timer"].style.transform="scaleX(1)";
+    // force reflow
+    void el["timer"].offsetWidth;
+    el["timer"].style.transition="transform "+win+"ms linear";
+    el["timer"].style.transform="scaleX(0)";
+
+    winTimer = setTimeout(endTrial, win);
+  }
+
+  function onTap(e){
+    if(!active) return;
+    e.preventDefault();
+    var list = (S.phase==="train") ? S.train : S.test;
+    var t = list[S.ti];
+    S.taps++;
+    // pop feedback
+    var stimEl = el["stim"].firstChild;
+    if(stimEl){ stimEl.classList.remove("pop"); void stimEl.offsetWidth; stimEl.classList.add("pop"); }
+    el["tap-hint"].style.display="none";
+    // reinforcement during training on S+ (intermittent, with brief refractory)
+    if(S.phase==="train" && t.rf){
+      var now = Date.now();
+      if(Math.random()<0.30 && (now - S.lastPay > 240)){
+        S.lastPay = now; S.score++;
+        el["score"].textContent = S.score;
+        flyReward();
+      }
+    }
+  }
+
+  function flyReward(){
+    var f=document.createElement("div");
+    f.className="reward-fly"; f.textContent="+1";
+    var zone=el["stimzone"].getBoundingClientRect();
+    f.style.left=(zone.width/2 - 10 + (Math.random()*40-20))+"px";
+    f.style.top=(zone.height/2 - 60)+"px";
+    el["stimzone"].appendChild(f);
+    setTimeout(function(){ if(f.parentNode)f.parentNode.removeChild(f); },650);
+  }
+
+  function endTrial(){
+    active=false;
+    var list = (S.phase==="train") ? S.train : S.test;
+    var t = list[S.ti];
+    if(S.phase==="test") S.counts[t.v].push(S.taps);
+    el["stimzone"].classList.add("dead");
+    el["stim"].innerHTML="";
+    el["tap-hint"].style.display="none";
+
+    setTimeout(function(){
+      S.ti++;
+      if(S.ti >= list.length){
+        if(S.phase==="train"){ S.phase="test"; S.ti=0; show("scr-bridge"); }
+        else { showResults(); }
+      }else{
+        startTrial();
+      }
+    }, GAP);
+  }
+
+  el["stimzone"].addEventListener("pointerdown", onTap);
+
+  // ---- results ----
+  function means(){
+    return S.counts.map(function(arr){
+      if(!arr.length) return 0;
+      return arr.reduce(function(a,b){return a+b;},0)/arr.length;
+    });
+  }
+
+  function showResults(){
+    show("scr-results");
+    el["score"].classList.add("hidden");
+    var m = means();
+    var maxM = Math.max.apply(null, m) || 1;
+    var peak = 0; for(var i=1;i<N;i++){ if(m[i]>m[peak]) peak=i; }
+
+    // build plot
+    el["plot"].innerHTML=""; el["axis"].innerHTML="";
+    for(var i=0;i<N;i++){
+      var col=document.createElement("div"); col.className="col";
+      // markers
+      if(i===S.sPlus){ var mk=document.createElement("div"); mk.className="marker splus"; mk.textContent="S+"; col.appendChild(mk); }
+      if(S.sMinus!==null && i===S.sMinus){ var mk2=document.createElement("div"); mk2.className="marker sminus"; mk2.textContent="S\u2212"; col.appendChild(mk2); }
+      if(i===peak){ var mk3=document.createElement("div"); mk3.className="marker peak"; mk3.textContent="PEAK"; col.appendChild(mk3); }
+      var bar=document.createElement("div"); bar.className="bar"+(i===peak?" peak":"");
+      bar.setAttribute("data-h", Math.round(m[i]/maxM*100));
+      col.appendChild(bar);
+      el["plot"].appendChild(col);
+
+      var tick=document.createElement("div"); tick.className="tick";
+      var mn=document.createElement("div"); renderStim(mn,i,true); tick.appendChild(mn);
+      el["axis"].appendChild(tick);
+    }
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      Array.prototype.forEach.call(el["plot"].querySelectorAll(".bar"),function(b){
+        b.style.height=b.getAttribute("data-h")+"%";
+      });
+    });});
+
+    var dimName = {hue:"color",tilt:"tilt",size:"size"}[cfg.dim];
+    el["axis-label"].textContent = "\u2190  "+dimName+" continuum  \u2192";
+
+    // verdict logic
+    var vb=el["verdict"], shift = peak - S.sPlus;
+    var expectDir = (S.sMinus!==null) ? (S.sMinus>S.sPlus ? -1 : 1) : 0;
+
+    if(cfg.cond==="single"){
+      el["res-title"].textContent="A generalization gradient";
+      el["res-lede"].innerHTML="You were only ever rewarded at <strong>S+</strong>. Look how your harvesting spread to neighbouring patches you were never trained on.";
+      if(Math.abs(shift)<=1){
+        vb.className="verdict-box gen";
+        vb.innerHTML='<div class="vt">Textbook gradient.</div><div class="vs">Your effort peaked on (or right next to) <strong>S+</strong> and tapered off smoothly to either side &mdash; the classic bell-shaped spread of a learned response.</div>';
+      }else{
+        vb.className="verdict-box flat";
+        vb.innerHTML='<div class="vt">A noisy gradient this run.</div><div class="vs">Your peak drifted a bit off S+ &mdash; single runs are noisy. The class average will center cleanly on S+.</div>';
+      }
+      el["explain-h"].textContent="What you\u2019re looking at";
+      el["explain-p"].innerHTML="A response trained to one stimulus doesn\u2019t stay locked to it &mdash; it <strong>generalizes</strong> to similar stimuli, and the more similar the patch, the harder you worked it. Plotting effort across the continuum traces the generalization gradient first mapped in pigeons by Guttman &amp; Kalish (1956). Now switch to <em>Discrimination</em> and watch the peak move.";
+    }else{
+      el["res-title"].textContent="Did the peak shift?";
+      el["res-lede"].innerHTML="You were rewarded at <strong>S+</strong> and never at <strong>S\u2212</strong>. The question: did your hardest harvesting stay on S+, or move?";
+      var shifted = (expectDir<0 && peak<S.sPlus) || (expectDir>0 && peak>S.sPlus);
+      var steps = Math.abs(shift);
+      if(shifted && steps>=1){
+        vb.className="verdict-box shift";
+        vb.innerHTML='<div class="vt">Peak shift &mdash; '+steps+' step'+(steps>1?'s':'')+' off S+.</div>'
+          +'<div class="vs">Your strongest response wasn\u2019t on the rewarded S+ at all. It shifted <strong>away from S\u2212</strong>, landing on a patch that <strong>never once paid out</strong> in training.</div>';
+      }else if(peak===S.sPlus){
+        vb.className="verdict-box flat";
+        vb.innerHTML='<div class="vt">Peak stayed on S+ this run.</div><div class="vs">No shift for you individually &mdash; and that\u2019s fine. Peak shift is an average effect: pool the class\u2019s peak positions and the shift away from S\u2212 appears.</div>';
+      }else{
+        vb.className="verdict-box flat";
+        vb.innerHTML='<div class="vt">Peak landed toward S\u2212 this run.</div><div class="vs">That\u2019s the opposite of the usual pattern &mdash; single runs are noisy. Add your peak to the class tally; the aggregate should still shift away from S\u2212.</div>';
+      }
+      el["explain-h"].textContent="What you\u2019re looking at";
+      el["explain-p"].innerHTML="After you learn a discrimination between a rewarded <strong>S+</strong> and an unrewarded <strong>S\u2212</strong>, your peak responding doesn\u2019t sit on S+ &mdash; it pushes to the far side of S+, <em>away</em> from S\u2212, onto a stimulus never reinforced. Hanson (1959) first showed this in pigeons after training against a nearby S\u2212. Try flipping which side S\u2212 sits on in the setup and the shift reverses direction.";
+    }
+
+    // class-tally report: peak position
+    el["report"].innerHTML='<div class="rl">Report to the class tally</div>'
+      +'<div class="rv">My peak was at position <b>'+(peak+1)+'</b> of '+N
+      + (cfg.cond==="disc"? '  (S+ = '+(S.sPlus+1)+', S\u2212 = '+(S.sMinus+1)+')' : '  (S+ = '+(S.sPlus+1)+')')
+      +'</div>';
+  }
+
+  // ---- flow buttons ----
+  el["to-instr"].addEventListener("click",function(){ S=build(); show("scr-instr"); });
+  el["to-train"].addEventListener("click",function(){ S.phase="train"; S.ti=0; show("scr-trial"); startTrial(); });
+  el["to-test"].addEventListener("click",function(){ show("scr-trial"); startTrial(); });
+  el["again-same"].addEventListener("click",function(){ S=build(); show("scr-instr"); });
+  el["again-setup"].addEventListener("click",function(){ show("scr-setup"); });
+
+})();
+</script>
+</body>
+</html>
