@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scenario Set &mdash; Variables, Stimulus &amp; Response, Type of Learning</title>
+<style>
+  :root{
+    --ink:#1b1b1b;
+    --muted:#6d6d6d;
+    --red:#A3282F;
+    --green:#1c6b3f;
+    --amber:#8a5a00;
+    --line:#d6d6d6;
+    --panel:#f4f2f2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#fff;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,Helvetica,sans-serif;}
+  body{min-height:100vh;display:flex;flex-direction:column;}
+  button,input,textarea{font-family:inherit;}
+
+  header{padding:14px 34px 12px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  header h1{margin:0;font-size:1.05rem;font-weight:700;}
+
+  .levels{display:flex;border:2px solid var(--line);border-radius:5px;overflow:hidden;}
+  .lvl{padding:7px 14px;font-size:.88rem;font-weight:600;border:0;background:#fff;
+    color:var(--muted);cursor:pointer;border-right:1px solid var(--line);}
+  .lvl:last-child{border-right:0;}
+  .lvl.on{background:var(--ink);color:#fff;}
+  .lvlnote{font-size:.85rem;color:var(--muted);}
+
+  .dots{margin-left:auto;display:flex;gap:8px;}
+  .dot{width:29px;height:29px;border-radius:50%;border:2px solid var(--line);background:#fff;
+    color:var(--muted);font-size:.82rem;font-weight:700;cursor:pointer;padding:0;}
+  .dot:hover{border-color:var(--red);color:var(--red);}
+  .dot.active{background:var(--red);border-color:var(--red);color:#fff;}
+  .dot.done{border-color:var(--red);color:var(--red);}
+
+  main{flex:1;padding:20px 34px 8px;display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start;}
+  @media (max-width:1080px){ main{grid-template-columns:1fr;} }
+
+  .scen{background:var(--panel);padding:18px 22px;border-radius:4px;}
+  .scen .num{font-size:.82rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--red);margin-bottom:8px;}
+  .scen p{margin:0;font-size:1.2rem;line-height:1.52;}
+
+  .studybtn{margin-top:12px;}
+  .study{margin-top:12px;border-left:4px solid var(--ink);background:#fff;padding:13px 17px;display:none;}
+  .study.show{display:block;}
+  .study .cite{font-size:.97rem;line-height:1.45;margin-bottom:9px;}
+  .study .found{font-size:1.01rem;line-height:1.5;}
+  .study .found b{color:var(--red);}
+
+  .work h2{font-size:.82rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 10px;}
+
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;min-height:44px;}
+  .chip{padding:9px 14px;font-size:1rem;border:2px solid var(--line);border-radius:20px;
+    background:#fff;color:var(--ink);cursor:pointer;line-height:1.25;text-align:left;}
+  .chip:hover{border-color:var(--red);}
+  .chip.sel{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+  .slots,.cards{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .slot,.card{border:2px solid var(--line);border-radius:4px;padding:12px 15px;min-height:96px;
+    background:#fff;cursor:pointer;text-align:left;width:100%;display:block;}
+  .slot{border-style:dashed;}
+  .slot:hover,.card:hover{border-color:var(--red);}
+  .lab{font-size:.78rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:8px;display:block;}
+  .fill,.val{font-size:1.05rem;line-height:1.35;color:#a9a9a9;font-style:italic;display:block;}
+  .slot.filled{border-style:solid;}
+  .slot.filled .fill,.card.on .val{color:var(--ink);font-style:normal;}
+  .card.on{border-color:var(--red);}
+  .card.on .lab{color:var(--red);}
+  .slot.ok{border-color:var(--green);background:#eef6f1;}
+  .slot.ok .lab{color:var(--green);}
+  .slot.no{border-color:var(--red);background:#fbf1f1;}
+  .slot.no .lab{color:var(--red);}
+
+  /* write level */
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+  .field{border:2px solid var(--line);border-radius:4px;padding:11px 13px;background:#fff;}
+  .field textarea{width:100%;border:0;outline:0;resize:none;font-size:1.02rem;line-height:1.35;
+    color:var(--ink);background:transparent;min-height:52px;}
+  .field textarea::placeholder{color:#b6b6b6;font-style:italic;}
+  .verdict{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;padding:2px 8px;border-radius:11px;margin-left:8px;vertical-align:2px;}
+  .v-yes{background:#eef6f1;color:var(--green);}
+  .v-close{background:#fdf6e7;color:var(--amber);}
+  .v-no{background:#fbf1f1;color:var(--red);}
+  .model{font-size:.96rem;line-height:1.4;color:var(--muted);margin-top:8px;
+    padding-top:8px;border-top:1px dotted var(--line);display:none;}
+  .model.show{display:block;}
+  .model b{color:var(--ink);}
+  .field.yes{border-color:var(--green);}
+  .field.close{border-color:#d9a441;}
+  .field.no{border-color:var(--red);}
+
+  .cold ol{margin:0 0 14px;padding-left:24px;font-size:1.1rem;line-height:1.7;}
+  .coldans{display:none;}
+  .coldans.show{display:block;}
+  .coldans div{font-size:1.06rem;line-height:1.5;margin-bottom:9px;}
+  .coldans b{color:var(--red);}
+
+  .typeq{margin-top:18px;border-top:1px solid var(--line);padding-top:15px;}
+  .typeq .q{font-size:1.1rem;font-weight:700;margin-bottom:10px;}
+  .choices{display:flex;gap:9px;}
+  .choice{flex:1;padding:12px 8px;font-size:1.05rem;font-weight:600;border:2px solid var(--line);
+    border-radius:4px;background:#fff;color:var(--ink);cursor:pointer;}
+  .choice:hover:not(:disabled){border-color:var(--red);}
+  .choice:disabled{cursor:default;}
+  .choice.correct{border-color:var(--green);background:#eef6f1;color:var(--green);}
+  .choice.wrong{border-color:#c4c4c4;background:#f5f5f5;color:#9a9a9a;text-decoration:line-through;}
+
+  .why{margin-top:12px;padding:12px 16px;border-left:4px solid var(--red);background:#faf7f7;
+    font-size:1.01rem;line-height:1.5;display:none;}
+  .why.show{display:block;}
+
+  footer{padding:12px 34px 16px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;}
+  .btn{padding:10px 19px;font-size:.95rem;font-weight:600;border:2px solid var(--ink);
+    border-radius:4px;background:#fff;color:var(--ink);cursor:pointer;}
+  .btn:hover:not(:disabled){background:var(--ink);color:#fff;}
+  .btn:disabled{opacity:.3;cursor:default;}
+  .btn.primary{border-color:var(--red);color:var(--red);}
+  .btn.primary:hover:not(:disabled){background:var(--red);color:#fff;}
+  .spacer{flex:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Learning &amp; Memory</h1>
+  <div class="levels" id="levels">
+    <button class="lvl" data-l="match">Match</button>
+    <button class="lvl on" data-l="reveal">Reveal</button>
+    <button class="lvl" data-l="write">Write</button>
+    <button class="lvl" data-l="cold">Cold call</button>
+  </div>
+  <span class="lvlnote" id="lvlnote"></span>
+  <div class="dots" id="dots"></div>
+</header>
+
+<main>
+  <section>
+    <div class="scen">
+      <div class="num" id="sNum"></div>
+      <p id="sText"></p>
+    </div>
+    <button class="btn studybtn" id="studyBtn">Show the study</button>
+    <div class="study" id="study">
+      <div class="cite" id="sCite"></div>
+      <div class="found" id="sFound"></div>
+    </div>
+  </section>
+
+  <section class="work">
+    <h2 id="workHead"></h2>
+    <div id="workArea"></div>
+    <div class="typeq">
+      <div class="q">Classical conditioning, operant conditioning, or neither?</div>
+      <div class="choices" id="choices">
+        <button class="choice" data-t="classical">Classical</button>
+        <button class="choice" data-t="operant">Operant</button>
+        <button class="choice" data-t="neither">Neither</button>
+      </div>
+      <div class="why" id="why"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <button class="btn" id="prev">&larr; Previous</button>
+  <button class="btn primary" id="action">Check answers</button>
+  <button class="btn" id="reset">Reset this one</button>
+  <span class="spacer"></span>
+  <button class="btn" id="next">Next &rarr;</button>
+</footer>
+
+<script>
+const SLOTS=[["iv","Independent variable"],["dv","Dependent variable"],["st","Stimulus"],["rs","Response"]];
+
+const DATA=[
+{
+ title:"Rats in enriched cages",
+ text:"At Berkeley in the early 1960s, littermate rats were assigned at weaning to one of two living arrangements. Some lived in a large cage in groups of twelve, with ladders, tunnels, running wheels, and a rotating set of toys, and were handled daily. Others lived alone in small bare cages. After roughly eighty days in their assigned condition, the researchers dissected and weighed sections of each rat's cerebral cortex.",
+ slots:{iv:"Living arrangement: enriched or isolated",dv:"Weight of the cerebral cortex",st:"The toys, tunnels, and cagemates",rs:"Exploring and handling the objects"},
+ keys:{
+  iv:[["cage","housing","hous","environment","living","condition","arrangement","group"],
+      ["enrich","isolat","alone","bare","complex","impoverish","toy","tunnel","standard"]],
+  dv:[["weight","weigh","mass","heavier","thick","size"],["cortex","cortical","brain"]],
+  st:[["toy","tunnel","ladder","wheel","object"],["cagemate","other rat","group","handl","environment","cage"]],
+  rs:[["explor","play","interact","climb","running","run","handl","manipulat","use","using"]]
+ },
+ chips:[
+  {id:"c1",label:"Living arrangement: enriched or isolated",slot:"iv"},
+  {id:"c2",label:"Weight of the cerebral cortex",slot:"dv"},
+  {id:"c3",label:"The toys, tunnels, and cagemates",slot:"st"},
+  {id:"c4",label:"Exploring and handling the objects",slot:"rs"},
+  {id:"d1",label:"The rats' genetic strain",slot:null,note:"Held constant. They were littermates, which is how the researchers ruled out genetics."},
+  {id:"d2",label:"Eighty days in the condition",slot:null,note:"The same for both groups, so it cannot be what is being manipulated."},
+  {id:"d3",label:"The researchers' prediction",slot:null,note:"That is the hypothesis, not a variable."}],
+ type:"neither",
+ why:"Nothing is paired with anything, and no consequence depends on what the rat does. Having a stimulus and a response does not make something conditioning. Everything has stimuli and responses.",
+ cite:"Rosenzweig, M. R., Krech, D., Bennett, E. L., &amp; Diamond, M. C. (1962). Effects of environmental complexity and training on brain chemistry and anatomy: A replication and extension. <em>Journal of Comparative and Physiological Psychology, 55</em>(4), 429&ndash;437.",
+ found:"Enriched rats grew measurably <b>heavier cerebral cortex</b> than their own littermates, and later work in the same lab found thicker cortex, larger synaptic contacts, and more dendritic branching. This was the first solid evidence that experience physically changes an adult brain. Marian Diamond reported that when she first presented the finding, someone in the audience shouted that the brain cannot change."
+},
+{
+ title:"Sixty words and a surprise test",
+ text:"Participants saw sixty words one at a time. Before each word appeared, they were asked one of three questions about it: whether it was printed in capital letters, whether it rhymed with a given word, or whether it would fit into a given sentence. They were told the study was about perception and speed. Afterward, with no warning, they were handed a list of 180 words, the original sixty mixed among 120 they had never seen, and asked to check off the ones they recognized.",
+ slots:{iv:"Which question was asked before the word",dv:"Proportion of words correctly recognized",st:"Each word and the question asked about it",rs:"The participant's yes-or-no judgment"},
+ keys:{
+  iv:[["question","task","asked","orienting","prompt","judgment","processing","level","depth"],
+      ["capital","rhyme","sentence","case","shallow","deep","semantic","letter"]],
+  dv:[["recogni","remember","rememb","recall","identif","check"],
+      ["word","proportion","percent","number","how many","score"]],
+  st:[["word"],["question","asked","prompt","list"]],
+  rs:[["yes","answer","judg","respond","respons","decision","decid"]]
+ },
+ chips:[
+  {id:"c1",label:"Which question was asked before the word",slot:"iv"},
+  {id:"c2",label:"Proportion of words correctly recognized",slot:"dv"},
+  {id:"c3",label:"Each word and the question asked about it",slot:"st"},
+  {id:"c4",label:"The participant's yes-or-no judgment",slot:"rs"},
+  {id:"d1",label:"The 120 words nobody had seen",slot:null,note:"Distractors on the recognition test. Part of how memory was measured, not a variable."},
+  {id:"d2",label:"Being told the study was about perception",slot:null,note:"Everyone was told this. It is a control, there to keep the learning incidental."},
+  {id:"d3",label:"The sixty words themselves",slot:null,note:"The same words appeared in every condition, which is what makes the comparison clean."}],
+ type:"neither",
+ why:"No pairing and no contingency. What is manipulated is how deeply you were pushed to process each word, which is a claim about encoding rather than about conditioning.",
+ cite:"Craik, F. I. M., &amp; Tulving, E. (1975). Depth of processing and the retention of words in episodic memory. <em>Journal of Experimental Psychology: General, 104</em>(3), 268&ndash;294.",
+ found:"Recognition was <b>far better for words judged against a sentence</b> than for words judged by rhyme, and worst for words judged by whether they were in capitals. Then the researchers closed the obvious loophole: they built a shallow task that took <b>longer</b> than a deep one, and it still produced worse memory. The effect is not about time spent. It is about what you did with the word. This returns on October 21."
+},
+{
+ title:"Placebo sleep",
+ text:"164 college students first reported how well they had slept the night before. Each was then wired to equipment and told it could determine what percentage of the previous night they had spent in REM sleep by reading pulse, heart rate, and brainwave frequency. It could do no such thing. Students were then randomly told either that they had gotten 28.7% REM, described to them as above average, or 16.2%, described as below average. They then completed a battery of cognitive tests.",
+ slots:{iv:"The REM figure participants were told they got",dv:"Scores on the cognitive tests",st:"The feedback about their sleep quality",rs:"Performance on the tests"},
+ keys:{
+  iv:[["told","inform","said","feedback","believ","think","thought","expect","number"],
+      ["rem","sleep","quality","28","16","percent","above average","below average"]],
+  dv:[["score","perform","result","how well","accuracy"],
+      ["test","cognitive","task","pasat","addition","word association"]],
+  st:[["feedback","told","inform","number","report","figure"],["sleep","rem","quality"]],
+  rs:[["perform","score","answer","complet","test","task"]]
+ },
+ chips:[
+  {id:"c1",label:"The REM figure participants were told they got",slot:"iv"},
+  {id:"c2",label:"Scores on the cognitive tests",slot:"dv"},
+  {id:"c3",label:"The feedback about their sleep quality",slot:"st"},
+  {id:"c4",label:"Performance on the tests",slot:"rs"},
+  {id:"d1",label:"How well students said they had slept",slot:null,note:"Measured but not manipulated. It is a variable, just not the independent variable, and it turned out not to predict performance."},
+  {id:"d2",label:"The brainwave equipment",slot:null,note:"Stage dressing. It made the false feedback believable and measured nothing that was used."},
+  {id:"d3",label:"How much sleep students actually got",slot:null,note:"Never manipulated and never really measured. That is the point of the design."}],
+ type:"neither",
+ why:"The only thing that differs between groups is what they were told. Everything else, including their actual sleep, is uncontrolled but unmanipulated. This is a placebo design, and it sets up blind and double-blind procedures.",
+ cite:"Draganich, C., &amp; Erdal, K. (2014). Placebo sleep affects cognitive functioning. <em>Journal of Experimental Psychology: Learning, Memory, and Cognition, 40</em>(3), 857&ndash;864.",
+ found:"Students told they had slept well <b>performed better</b> on the Paced Auditory Serial Addition Test and a word association task. What they had actually reported about their own sleep <b>did not predict</b> their scores. The belief did the work. Control conditions ruled out the possibility that students were simply performing to expectation."
+},
+{
+ title:"Mapletoff ice cream",
+ text:"Children between the ages of two and sixteen who were receiving chemotherapy for cancer were randomly assigned to three groups. One group was given a novel ice cream flavor called Mapletoff, made with maple and black walnut extract, shortly before a chemotherapy session that reliably caused nausea. A second group had the same chemotherapy and no ice cream. A third group had the Mapletoff but no nausea-inducing drug that day. Weeks later, every child was offered a choice between Mapletoff ice cream and playing with a toy.",
+ slots:{iv:"Whether the Mapletoff was followed by nausea",dv:"Percentage who later chose the Mapletoff",st:"The Mapletoff flavor",rs:"Choosing or refusing the ice cream"},
+ keys:{
+  iv:[["nausea","sick","chemo","toxic","illness","ill","vomit","drug"],
+      ["mapletoff","ice cream","flavor","pair","follow","group","before","condition"]],
+  dv:[["chose","choos","chos","pick","select","eat","ate","want","prefer","avoid","refus","take","took"],
+      ["mapletoff","ice cream","flavor","percent","proportion","how many","number"]],
+  st:[["mapletoff","ice cream","flavor","taste"]],
+  rs:[["chose","choos","chos","pick","select","eat","ate","refus","avoid","reject","decline","take","took"]]
+ },
+ chips:[
+  {id:"c1",label:"Whether the Mapletoff was followed by nausea",slot:"iv"},
+  {id:"c2",label:"Percentage who later chose the Mapletoff",slot:"dv"},
+  {id:"c3",label:"The Mapletoff flavor",slot:"st"},
+  {id:"c4",label:"Choosing or refusing the ice cream",slot:"rs"},
+  {id:"d1",label:"The nausea caused by the drugs",slot:null,note:"Not wrong so much as a term you do not have yet. This is the unconditioned stimulus, and it gets its name in Chapter 4."},
+  {id:"d2",label:"The children's ages",slot:null,note:"Recorded and used to balance the groups. Not manipulated."},
+  {id:"d3",label:"The toy offered as an alternative",slot:null,note:"Part of how the choice was measured, not a variable in its own right."}],
+ type:"classical",
+ why:"The flavor is paired with the nausea. Nothing the child does changes whether the nausea arrives, which is exactly the test that separates this from the next scenario.",
+ cite:"Bernstein, I. L. (1978). Learned taste aversions in children receiving chemotherapy. <em>Science, 200</em>(4347), 1302&ndash;1303.",
+ found:"Later, <b>21%</b> of the children whose Mapletoff had been followed by nausea chose it again. In the two control groups the figures were <b>67% and 73%</b>. One pairing was enough. The novel flavor mattered, because an unfamiliar taste has no history competing with it. The finding changed how oncology handles patient nutrition, since it explained why cancer patients stop eating foods they used to like."
+},
+{
+ title:"Paying people to quit",
+ text:"878 employees of a large multinational company were randomly assigned. 442 received information about smoking cessation programs. The other 436 received the same information plus a bundle of financial incentives worth up to $750: money for completing a cessation program, more for quitting within six months, and more again for still being smoke-free six months after that. Quitting was confirmed by biochemical testing rather than self-report, and rates were checked nine to twelve months after enrollment.",
+ slots:{iv:"Whether financial incentives were offered",dv:"Percentage confirmed smoke-free at 9 to 12 months",st:"The workplace and the program offer",rs:"Enrolling, completing the program, and quitting"},
+ keys:{
+  iv:[["incentive","money","paid","pay","financial","cash","750","reward","payment"]],
+  dv:[["quit","cessation","smoke free","smoke-free","stop","abstin","not smoking","quitting"],
+      ["percent","rate","proportion","how many","number","confirm","biochem"]],
+  st:[["workplace","work","program","offer","information","company","employer","job"]],
+  rs:[["quit","stop","cessation","abstain","enroll","complet","sign up","attend"]]
+ },
+ chips:[
+  {id:"c1",label:"Whether financial incentives were offered",slot:"iv"},
+  {id:"c2",label:"Percentage confirmed smoke-free at 9 to 12 months",slot:"dv"},
+  {id:"c3",label:"The workplace and the program offer",slot:"st"},
+  {id:"c4",label:"Enrolling, completing the program, and quitting",slot:"rs"},
+  {id:"d1",label:"The cessation program information",slot:null,note:"Both groups got it, which is what makes this a clean comparison rather than a program-versus-nothing study."},
+  {id:"d2",label:"Employees' own reports of quitting",slot:null,note:"Deliberately not used. Paying people to quit gives them a reason to say they quit, so the researchers tested biochemically instead."},
+  {id:"d3",label:"The 878 employees enrolled",slot:null,note:"Sample size. Tells you about statistical power, not about what was manipulated."}],
+ type:"operant",
+ why:"The money arrives only if the employee makes the response. No quitting, no payment. That contingency is the entire difference between this and the ice cream.",
+ cite:"Volpp, K. G., Troxel, A. B., Pauly, M. V., Glick, H. A., Puig, A., Asch, D. A., &hellip; Audrain-McGovern, J. (2009). A randomized, controlled trial of financial incentives for smoking cessation. <em>New England Journal of Medicine, 360</em>(7), 699&ndash;709.",
+ found:"<b>14.7%</b> of the incentive group had quit at nine to twelve months, against <b>5.0%</b> of the information-only group. Six months after the money stopped, the gap held: <b>9.4% against 3.6%</b>. That second number matters. If the behavior had collapsed the moment the money ended, this would be a very different story about what was learned."
+},
+{
+ title:"Albert and the white rat",
+ text:"An eleven-month-old infant, identified in the report only as Albert B., showed no fear of a white rat at baseline. Researchers then struck a steel bar with a hammer behind his head each time he reached for the rat. After seven such pairings, the rat alone made him cry and crawl away. Over the following weeks they presented him with a rabbit, a dog, a fur coat, cotton wool, a Santa Claus mask, and wooden blocks, recording his reaction to each.",
+ slots:{iv:"Which object was presented",dv:"Strength of Albert's fear reaction",st:"The white rat, and things resembling it",rs:"Crying and crawling away"},
+ keys:{
+  iv:[["object","stimulus","animal","item","thing","which","rat","rabbit","dog","coat","mask","block","presented"]],
+  dv:[["fear","cry","cried","distress","afraid","react","scared","upset","withdraw","fright"]],
+  st:[["rat"],["rabbit","dog","fur","coat","mask","cotton","similar","resembl","furry","white","other"]],
+  rs:[["cry","cried","crawl","withdraw","fear","away","flinch","upset","scream","avoid"]]
+ },
+ chips:[
+  {id:"c1",label:"Which object was presented",slot:"iv"},
+  {id:"c2",label:"Strength of Albert's fear reaction",slot:"dv"},
+  {id:"c3",label:"The white rat, and things resembling it",slot:"st"},
+  {id:"c4",label:"Crying and crawling away",slot:"rs"},
+  {id:"d1",label:"The noise from the steel bar",slot:null,note:"Another term you do not have yet. This is the unconditioned stimulus, and it is absent during the generalization tests."},
+  {id:"d2",label:"Albert's age",slot:null,note:"A fact about the participant, not a variable. There was only one participant, which is its own problem."},
+  {id:"d3",label:"The seven pairings",slot:null,note:"Held constant before the generalization tests began."}],
+ type:"classical",
+ why:"A neutral stimulus paired with something that already produced a reaction. Then the reaction spread to things that merely resembled the rat, which is generalization.",
+ cite:"Watson, J. B., &amp; Rayner, R. (1920). Conditioned emotional reactions. <em>Journal of Experimental Psychology, 3</em>(1), 1&ndash;14.",
+ found:"Albert reacted with fear to the <b>rabbit, the dog, the fur coat, the cotton wool, and the Santa Claus mask</b>, but played happily with the <b>wooden blocks</b>. The gradient tracked resemblance to the rat. This would not clear an IRB today, and Watson never removed the fear, because Albert left the hospital on the day of the final tests. Generalization gets a full day in Chapter 6."
+}
+];
+
+const LVLNOTE={
+ match:"Tap or drag a phrase into a box.",
+ reveal:"Tap a box to reveal.",
+ write:"Type an answer in each box, then check.",
+ cold:"No scaffolding. Reveal all four at once."
+};
+const VERDICT={yes:["Yes","v-yes"],close:["Close","v-close"],no:["Not yet","v-no"]};
+
+let level="reveal", idx=0, sel=null;
+const blank=()=>({placed:{},revealed:{},typed:{},graded:false,coldOpen:false,typeDone:false,checked:false,studyOpen:false});
+const state=DATA.map(blank);
+const el=id=>document.getElementById(id);
+const esc=t=>{const d=document.createElement("div");d.textContent=t;return d.innerHTML;};
+
+function grade(text,groups){
+  const t=(text||"").toLowerCase().replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+  if(!t) return null;
+  let hits=0;
+  groups.forEach(g=>{ if(g.some(k=>new RegExp("\\b"+k).test(t))) hits++; });
+  const r=hits/groups.length;
+  return r>=1?"yes":(r>=0.5?"close":"no");
+}
+
+DATA.forEach((d,i)=>{
+  const b=document.createElement("button");
+  b.className="dot"; b.textContent=i+1; b.title=d.title;
+  b.onclick=()=>{idx=i;sel=null;render();};
+  el("dots").appendChild(b);
+});
+
+document.querySelectorAll(".lvl").forEach(b=>{
+  b.onclick=()=>{
+    level=b.dataset.l; sel=null;
+    for(let i=0;i<state.length;i++){ const keep=state[i].studyOpen; state[i]=blank(); state[i].studyOpen=keep; }
+    render();
+  };
+});
+
+function render(){
+  const d=DATA[idx], s=state[idx];
+
+  document.querySelectorAll(".lvl").forEach(b=>b.classList.toggle("on",b.dataset.l===level));
+  el("lvlnote").textContent=LVLNOTE[level];
+
+  el("sNum").textContent="Scenario "+(idx+1)+" \u00b7 "+d.title;
+  el("sText").textContent=d.text;
+  el("study").classList.toggle("show",s.studyOpen);
+  el("studyBtn").textContent=s.studyOpen?"Hide the study":"Show the study";
+  el("sCite").innerHTML=d.cite;
+  el("sFound").innerHTML=d.found;
+
+  const area=el("workArea");
+  area.innerHTML="";
+
+  if(level==="match"){
+    el("workHead").textContent="Place each phrase";
+    const bank=document.createElement("div");
+    bank.className="bank";
+    const used=new Set(Object.values(s.placed));
+    d.chips.forEach(c=>{
+      if(used.has(c.id))return;
+      const b=document.createElement("button");
+      b.className="chip"+(sel===c.id?" sel":"");
+      b.textContent=c.label;
+      b.draggable=true;
+      b.ondragstart=e=>{e.dataTransfer.setData("text/plain",c.id);};
+      b.onclick=()=>{sel=(sel===c.id?null:c.id);render();};
+      bank.appendChild(b);
+    });
+    area.appendChild(bank);
+
+    const grid=document.createElement("div");
+    grid.className="slots";
+    SLOTS.forEach(([k,label])=>{
+      const chip=s.placed[k]?d.chips.find(c=>c.id===s.placed[k]):null;
+      const b=document.createElement("button");
+      let cls="slot"+(chip?" filled":"");
+      if(s.checked&&chip) cls+=(chip.slot===k?" ok":" no");
+      b.className=cls;
+      b.innerHTML='<span class="lab">'+label+'</span><span class="fill">'+(chip?esc(chip.label):"empty")+'</span>';
+      b.ondragover=e=>e.preventDefault();
+      b.ondrop=e=>{
+        e.preventDefault();
+        const id=e.dataTransfer.getData("text/plain");
+        for(const kk in s.placed) if(s.placed[kk]===id) delete s.placed[kk];
+        s.placed[k]=id; sel=null; s.checked=false; render();
+      };
+      b.onclick=()=>{
+        if(sel){
+          for(const kk in s.placed) if(s.placed[kk]===sel) delete s.placed[kk];
+          s.placed[k]=sel; sel=null;
+        } else if(chip){ delete s.placed[k]; }
+        s.checked=false; render();
+      };
+      grid.appendChild(b);
+    });
+    area.appendChild(grid);
+
+    if(s.checked){
+      const n=document.createElement("div");
+      n.className="why show";
+      const misplaced=d.chips.filter(c=>{
+        const k=Object.keys(s.placed).find(kk=>s.placed[kk]===c.id);
+        return k&&c.slot!==k;
+      });
+      if(Object.keys(s.placed).length<4){
+        n.innerHTML="Fill all four boxes, then check again.";
+      } else if(misplaced.length===0){
+        const left=d.chips.filter(c=>!Object.values(s.placed).includes(c.id));
+        n.innerHTML="All four correct. Still in the bank: "+
+          left.map(c=>"<b>"+esc(c.label)+"</b>").join(", ")+".";
+      } else {
+        n.innerHTML=misplaced.map(c=>"<b>"+esc(c.label)+"</b> \u2014 "+
+          esc(c.note||"belongs in a different box.")).join("<br>");
+      }
+      area.appendChild(n);
+    }
+  }
+
+  else if(level==="reveal"){
+    el("workHead").textContent="Tap to reveal";
+    const grid=document.createElement("div");
+    grid.className="cards";
+    SLOTS.forEach(([k,label])=>{
+      const b=document.createElement("button");
+      b.className="card"+(s.revealed[k]?" on":"");
+      b.innerHTML='<span class="lab">'+label+'</span><span class="val">'+
+        (s.revealed[k]?esc(d.slots[k]):"tap to reveal")+'</span>';
+      b.onclick=()=>{s.revealed[k]=!s.revealed[k];render();};
+      grid.appendChild(b);
+    });
+    area.appendChild(grid);
+  }
+
+  else if(level==="write"){
+    el("workHead").textContent="Type an answer for each";
+    const grid=document.createElement("div");
+    grid.className="fields";
+    SLOTS.forEach(([k,label])=>{
+      const v=s.graded?grade(s.typed[k],d.keys[k]):null;
+      const wrap=document.createElement("div");
+      wrap.className="field"+(v?" "+v:"");
+      const lab=document.createElement("span");
+      lab.className="lab";
+      lab.innerHTML=label+(v?'<span class="verdict '+VERDICT[v][1]+'">'+VERDICT[v][0]+'</span>':"");
+      const ta=document.createElement("textarea");
+      ta.rows=2;
+      ta.placeholder="type here";
+      ta.value=s.typed[k]||"";
+      ta.oninput=e=>{ s.typed[k]=e.target.value; };
+      const mod=document.createElement("div");
+      mod.className="model"+(s.graded?" show":"");
+      mod.innerHTML="<b>"+esc(d.slots[k])+"</b>";
+      wrap.appendChild(lab); wrap.appendChild(ta); wrap.appendChild(mod);
+      grid.appendChild(wrap);
+    });
+    area.appendChild(grid);
+    if(s.graded){
+      const n=document.createElement("div");
+      n.className="why show";
+      n.innerHTML="Matching is by keyword, so a right answer worded oddly can read as Close. The model answer is the arbiter, not the badge.";
+      area.appendChild(n);
+    }
+  }
+
+  else {
+    el("workHead").textContent="Work all four before revealing";
+    const w=document.createElement("div");
+    w.className="cold";
+    w.innerHTML="<ol><li>What is the independent variable?</li><li>What is the dependent variable?</li>"+
+      "<li>What is the stimulus? What is the response?</li>"+
+      "<li>Classical, operant, or neither, and why?</li></ol>"+
+      '<div class="coldans'+(s.coldOpen?" show":"")+'">'+
+      SLOTS.map(([k,label])=>"<div><b>"+label+":</b> "+esc(d.slots[k])+"</div>").join("")+"</div>";
+    area.appendChild(w);
+  }
+
+  document.querySelectorAll(".choice").forEach(b=>{
+    b.classList.remove("correct","wrong");
+    b.disabled=s.typeDone;
+    if(s.typeDone) b.classList.add(b.dataset.t===d.type?"correct":"wrong");
+  });
+  const why=el("why");
+  why.classList.toggle("show",s.typeDone);
+  why.innerHTML=s.typeDone?esc(d.why):"";
+
+  document.querySelectorAll(".dot").forEach((b,i)=>{
+    const st=state[i];
+    b.classList.toggle("active",i===idx);
+    b.classList.toggle("done",i!==idx&&(st.typeDone||st.checked||st.graded||st.coldOpen||
+      Object.keys(st.revealed).length>0||Object.keys(st.placed).length>0));
+  });
+
+  el("prev").disabled=idx===0;
+  el("next").disabled=idx===DATA.length-1;
+  el("action").textContent=(level==="match"||level==="write")?"Check answers":"Reveal all four";
+}
+
+document.querySelectorAll(".choice").forEach(b=>{
+  b.onclick=()=>{state[idx].typeDone=true;render();};
+});
+el("prev").onclick=()=>{if(idx>0){idx--;sel=null;render();}};
+el("next").onclick=()=>{if(idx<DATA.length-1){idx++;sel=null;render();}};
+el("studyBtn").onclick=()=>{state[idx].studyOpen=!state[idx].studyOpen;render();};
+el("reset").onclick=()=>{ state[idx]=blank(); sel=null; render(); };
+el("action").onclick=()=>{
+  const s=state[idx];
+  if(level==="match") s.checked=true;
+  else if(level==="write") s.graded=true;
+  else if(level==="cold") s.coldOpen=true;
+  else SLOTS.forEach(([k])=>s.revealed[k]=true);
+  render();
+};
+
+render();
+</script>
+</body>
+</html>
