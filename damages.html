@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deficit Rounds</title>
+<style>
+  :root{
+    --ink:#222222;
+    --muted:#767676;
+    --line:#d8d3d3;
+    --accent:#A3282F;
+    --wash:#faf8f8;
+    --band:#ede7e7;
+    --good:#2f6b3d;
+    --near:#8a6a12;
+    --bad:#8c2f2f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:Arial,Helvetica,sans-serif;
+    color:var(--ink);
+    background:#ffffff;
+    line-height:1.5;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 22px 70px;}
+
+  header{border-bottom:3px solid var(--accent);padding-bottom:12px;margin-bottom:18px;}
+  h1{font-size:25px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;}
+
+  /* controls */
+  .bar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:16px 0 6px;}
+  .levels{display:flex;flex-wrap:wrap;gap:6px;}
+  .lvl{
+    font:inherit;font-size:14px;padding:7px 15px;cursor:pointer;
+    background:#fff;border:1px solid var(--line);border-radius:2px;color:var(--ink);
+  }
+  .lvl:hover{background:var(--wash);}
+  .lvl[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .lvlnote{font-size:13px;color:var(--muted);margin:0 0 14px;}
+
+  /* case nav */
+  .cases{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;}
+  .cbtn{
+    font:inherit;font-size:13px;width:34px;height:32px;cursor:pointer;
+    background:#fff;border:1px solid var(--line);color:var(--muted);border-radius:2px;
+  }
+  .cbtn:hover{background:var(--wash);}
+  .cbtn[aria-current="true"]{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .cbtn.done{border-color:var(--ink);color:var(--ink);font-weight:bold;}
+  .cbtn.stretch{border-style:dashed;}
+
+  /* layout */
+  .cols{display:block;}
+  @media (min-width:1020px){
+    .cols{display:flex;gap:30px;align-items:flex-start;}
+    .left{flex:1 1 46%;min-width:0;position:sticky;top:16px;}
+    .right{flex:1 1 54%;min-width:0;}
+  }
+
+  .caselabel{
+    font-size:12px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:14px 0 6px;
+  }
+  .casebox{
+    border:1px solid var(--line);border-left:4px solid var(--accent);
+    padding:18px 20px;background:var(--wash);
+  }
+  .casebox p{margin:0 0 12px;font-size:17px;}
+  .casebox p:last-child{margin-bottom:0;}
+  .ask{font-weight:bold;}
+
+  .stretchtag{
+    display:inline-block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    border:1px solid var(--accent);color:var(--accent);padding:1px 7px;margin-left:8px;
+    vertical-align:2px;
+  }
+
+  h2.work{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+    margin:16px 0 10px;font-weight:normal;}
+
+  /* choose grid */
+  .grid{display:grid;grid-template-columns:1fr;gap:7px;}
+  @media (min-width:560px){.grid{grid-template-columns:1fr 1fr;}}
+  .opt{
+    font:inherit;font-size:15px;text-align:left;padding:11px 14px;cursor:pointer;
+    background:#fff;border:1px solid var(--line);border-radius:2px;color:var(--ink);
+    line-height:1.35;
+  }
+  .opt:hover:not(:disabled){background:var(--wash);border-color:var(--muted);}
+  .opt:disabled{cursor:default;}
+  .opt small{display:block;color:var(--muted);font-size:12px;margin-top:2px;}
+  .opt.pick{border-color:var(--ink);border-width:2px;padding:10px 13px;}
+  .opt.right{border-color:var(--good);border-width:2px;padding:10px 13px;background:#f2f7f3;}
+  .opt.wrong{border-color:var(--bad);border-width:2px;padding:10px 13px;background:#fbf3f3;}
+
+  /* reveal cards */
+  .card{
+    border:1px solid var(--line);padding:14px 16px;margin-bottom:9px;cursor:pointer;
+    background:#fff;
+  }
+  .card:hover{background:var(--wash);}
+  .card .q{font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  .card .a{margin-top:7px;font-size:16px;}
+  .card .a.hidden{color:var(--muted);font-style:italic;font-size:14px;}
+
+  /* write */
+  textarea,input[type=text]{
+    font:inherit;font-size:16px;width:100%;padding:10px 12px;
+    border:1px solid var(--line);border-radius:2px;color:var(--ink);background:#fff;
+  }
+  textarea{min-height:72px;resize:vertical;}
+  .fieldlab{font-size:14px;margin:12px 0 5px;font-weight:bold;}
+
+  .badge{
+    display:inline-block;font-size:12px;letter-spacing:.07em;text-transform:uppercase;
+    padding:3px 10px;border:1px solid;margin-bottom:7px;
+  }
+  .badge.yes{color:var(--good);border-color:var(--good);}
+  .badge.close{color:var(--near);border-color:var(--near);}
+  .badge.no{color:var(--bad);border-color:var(--bad);}
+
+  .model{
+    border-left:3px solid var(--band);padding:2px 0 2px 14px;margin:8px 0 0;
+    font-size:15px;
+  }
+  .model strong{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);font-weight:normal;margin-bottom:3px;}
+
+  .caveat{font-size:13px;color:var(--muted);margin-top:12px;}
+
+  /* buttons */
+  .btn{
+    font:inherit;font-size:15px;padding:9px 20px;cursor:pointer;border-radius:2px;
+    background:var(--ink);border:1px solid var(--ink);color:#fff;
+  }
+  .btn:hover{background:#000;}
+  .btn.ghost{background:#fff;color:var(--ink);border-color:var(--line);}
+  .btn.ghost:hover{background:var(--wash);}
+  .btnrow{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;}
+
+  /* answer block */
+  .answer{margin-top:18px;border-top:1px solid var(--line);padding-top:14px;}
+  .answer .region{font-size:20px;font-weight:bold;margin-bottom:8px;}
+  .answer .why{font-size:15px;margin:0 0 10px;}
+  .miss{font-size:14px;background:var(--wash);border:1px solid var(--line);
+    padding:11px 13px;margin-top:10px;}
+  .miss b{display:block;margin-bottom:3px;}
+
+  /* evidence */
+  details.ev{border:1px solid var(--line);margin-top:16px;background:#fff;}
+  details.ev summary{
+    cursor:pointer;padding:10px 14px;font-size:14px;
+    letter-spacing:.05em;text-transform:uppercase;color:var(--muted);list-style:none;
+  }
+  details.ev summary::-webkit-details-marker{display:none;}
+  details.ev summary::before{content:"+  ";}
+  details.ev[open] summary::before{content:"\2013  ";}
+  details.ev summary:hover{background:var(--wash);}
+  .evbody{padding:2px 16px 16px;font-size:15px;}
+  .evbody .who{font-weight:bold;margin-bottom:6px;}
+  .cite{font-size:13px;color:var(--muted);margin-top:10px;}
+
+  .nav{display:flex;justify-content:space-between;gap:10px;margin-top:34px;
+    border-top:1px solid var(--line);padding-top:14px;}
+
+  footer{margin-top:44px;border-top:1px solid var(--line);padding-top:14px;
+    font-size:12px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Deficit Rounds</h1>
+  <div class="sub">Something is missing. Something stops working. Name the region.</div>
+</header>
+
+<div class="bar">
+  <div class="levels" id="levels" role="group" aria-label="Response format">
+    <button class="lvl" data-lvl="choose">Choose</button>
+    <button class="lvl" data-lvl="write">Write</button>
+    <button class="lvl" data-lvl="reveal">Reveal</button>
+    <button class="lvl" data-lvl="cold">Cold call</button>
+  </div>
+</div>
+<p class="lvlnote" id="lvlnote"></p>
+
+<div class="cases" id="cases"></div>
+
+<div class="cols">
+  <div class="left">
+    <div class="caselabel" id="caselabel"></div>
+    <div class="casebox" id="casebox"></div>
+  </div>
+  <div class="right" id="work"></div>
+</div>
+
+<div class="nav">
+  <button class="btn ghost" id="prev">&#8592; Previous</button>
+  <button class="btn ghost" id="next">Next &#8594;</button>
+</div>
+
+<footer>
+  Learning &amp; Memory &#183; Chapter 2 &#183; Flagler College
+</footer>
+
+</div>
+
+<script>
+/* ============================================================
+   REGION BANK - identical for every case
+   ============================================================ */
+const REGIONS = [
+  {id:"m1",    name:"Frontal lobe",        note:"primary motor cortex (M1)"},
+  {id:"pfc",   name:"Prefrontal cortex",   note:"front of the frontal lobe"},
+  {id:"s1",    name:"Parietal lobe",       note:"primary somatosensory cortex (S1)"},
+  {id:"a1",    name:"Temporal lobe",       note:"primary auditory cortex (A1)"},
+  {id:"v1",    name:"Occipital lobe",      note:"primary visual cortex (V1)"},
+  {id:"hipp",  name:"Hippocampus",         note:""},
+  {id:"amyg",  name:"Amygdala",            note:""},
+  {id:"bg",    name:"Basal ganglia",       note:""},
+  {id:"cb",    name:"Cerebellum",          note:""},
+  {id:"bs",    name:"Brainstem",           note:""}
+];
+const REGMAP = {}; REGIONS.forEach(r=>REGMAP[r.id]=r);
+
+/* ============================================================
+   CASES
+   ============================================================ */
+const CASES = [
+{
+  id:1,
+  text:["A woman's outer ear, eardrum, cochlea, and auditory nerve all test normal. She can tell you the instant a sound occurs. She cannot identify what the sound is, and she cannot understand speech she hears, though she reads and writes without difficulty."],
+  ask:"Where is the damage?",
+  ans:"a1",
+  why:"The ear is doing its job and the signal is arriving. What is gone is the cortex that interprets it. Sensation without perception points to primary sensory cortex, and hearing lands in the temporal lobe.",
+  accept:["temporal","auditory","a1"],
+  partial:["cochlea","wernick"],
+  misses:{
+    v1:"Occipital is vision. She has no visual complaint.",
+    bs:"Brainstem damage this severe would affect breathing and consciousness, not one modality."
+  },
+  ev:{
+    who:"Cortical deafness",
+    body:"Rare, and usually the result of bilateral strokes in the superior temporal lobes. Patients often insist their hearing is fine, which is itself informative: the damaged region is also the one that would let them evaluate the loss."
+  }
+},
+{
+  id:2,
+  text:["A man's pupils constrict normally to light. His retinas are healthy and his optic nerves conduct normally. He reports that he sees nothing at all, and he walks into furniture."],
+  ask:"Where is the damage?",
+  ans:"v1",
+  why:"The pupil reflex runs through the midbrain and does not need cortex, which is why it survives. The conscious experience of seeing does need cortex. Same logic as the previous case, different modality.",
+  accept:["occipital","visual cortex","v1","striate"],
+  partial:["retina","optic"],
+  misses:{
+    a1:"Temporal is hearing. Nothing here is about sound.",
+    s1:"Parietal damage can produce neglect, where a patient ignores half the world. That is different from reporting no vision at all."
+  },
+  ev:{
+    who:"Cortical blindness",
+    body:"The intact pupil response is the diagnostic tell that separates this from eye or optic nerve damage. Some patients deny being blind and confabulate descriptions of what they claim to see, a condition called Anton's syndrome."
+  }
+},
+{
+  id:3,
+  text:["After a stroke, a man reports that when you touch the left side of his face he feels something, but he cannot say where. He sometimes localizes the touch to his hand instead. Fine texture on that side of his face feels smeared."],
+  ask:"Where is the damage?",
+  ans:"s1",
+  why:"Touch has a map, and the map is in the parietal lobe. Damage to it does not usually erase sensation. It scrambles the spatial part, which is why localization fails before detection does. The face and the hand sit next to each other on that map, which is why the mislocalization goes where it goes.",
+  accept:["parietal","somatosensory","s1"],
+  partial:["homunculus","postcentral"],
+  misses:{
+    m1:"Frontal M1 is the output map, not the input map. He can move his face fine.",
+    cb:"Cerebellar damage disrupts the accuracy of movement, not the localization of touch."
+  },
+  ev:{
+    who:"The somatosensory homunculus",
+    body:"Penfield and Rasmussen mapped this by electrically stimulating the cortex of awake neurosurgical patients and asking what they felt. Adjacent body parts occupy adjacent cortex, and the face and hand are neighbors on the map despite being nowhere near each other on the body.",
+    cite:"Penfield, W., & Rasmussen, T. (1950). The Cerebral Cortex of Man. Macmillan."
+  }
+},
+{
+  id:4,
+  text:["A woman has normal muscle tone in her right arm and normal reflexes. She can feel the cup in front of her and describe it accurately. Asked to pick it up, nothing happens on the right side. She says she is trying."],
+  ask:"Where is the damage?",
+  ans:"m1",
+  why:"Sensation is intact and the muscle is intact, so the break is in the command, not the receiver. Voluntary motor commands originate in the frontal lobe. Note also that the deficit is on the right and the damage will be on the left, because the pathway crosses.",
+  accept:["frontal","motor cortex","m1","precentral"],
+  partial:["prefrontal","corticospinal"],
+  misses:{
+    s1:"Parietal is input. She feels the cup perfectly well.",
+    bg:"Basal ganglia problems slow and shrink movement rather than abolishing it. She would move, badly."
+  },
+  ev:{
+    who:"Contralateral control",
+    body:"Nearly every case in this set follows the same crossing rule, and it is worth checking yourself on it. Left hemisphere damage, right side deficit."
+  }
+},
+{
+  id:5,
+  text:["A man reaches for a cup and his hand sails past it, then corrects back in a series of overshooting jerks. His fingers begin closing well before they reach the handle. He is much worse with his eyes closed, and he cannot touch his own nose smoothly."],
+  ask:"Where is the damage?",
+  ans:"cb",
+  why:"He can move, so the command is being sent. What is missing is the timing and calibration of the movement. The cerebellum is the structure that scales and times motor output using feedback, and losing it produces exactly this pattern of overshoot and correction.",
+  accept:["cerebell"],
+  partial:["basal ganglia","striat"],
+  misses:{
+    m1:"M1 damage would prevent the movement, not make it inaccurate. He is moving plenty.",
+    s1:"Worth taking seriously, since he is worse with eyes closed. But parietal damage would degrade the sensation itself, and his complaint is about the movement."
+  },
+  ev:{
+    who:"Dysmetria and intention tremor",
+    body:"The clinical name for the overshoot is dysmetria. The cerebellum will come back in Chapter 4, where it turns out to be necessary for classically conditioned eyeblink responses. Its job is timing, and conditioning is a timing problem."
+  }
+},
+{
+  id:6,
+  text:["A woman handles live snakes with visible curiosity. She walks through a haunted house and startles the actors rather than the other way around. She recognizes happiness, sadness, and anger in photographs of faces, but not fear. She reports never having felt afraid as an adult."],
+  ask:"Where is the damage?",
+  ans:"amyg",
+  why:"Emotion in general is intact. One emotion is missing, and so is the ability to recognize it in others. A selective deficit that specific points to a structure with a specific job rather than a broad area.",
+  accept:["amygdal"],
+  partial:["limbic","temporal"],
+  misses:{
+    pfc:"Prefrontal damage affects judgment and impulse control broadly. Her deficit is one emotion, not her whole decision-making.",
+    hipp:"Her memory is fine, and the hippocampus sits right next door, which is what makes this a useful pair."
+  },
+  ev:{
+    who:"Patient S.M.",
+    body:"Her amygdalae were destroyed bilaterally by Urbach-Wiethe disease. Researchers took her to an exotic pet store, a haunted house, and through fear-inducing film clips. She asked repeatedly to touch a tarantula. Later work found she does experience panic when inhaling carbon dioxide, which suggests the amygdala is needed for fear triggered by external threat, not for every route to fear.",
+    cite:"Feinstein, J. S., Adolphs, R., Damasio, A., & Tranel, D. (2011). The human amygdala and the induction and experience of fear. Current Biology, 21(1), 34-38."
+  }
+},
+{
+  id:7,
+  text:["A man is sorting cards by color and being told after each card whether he is right. Partway through, the rule silently changes to shape. He is now told 'wrong' on every card. He keeps sorting by color for dozens more cards. Asked what he is doing, he says the rule must have changed, and then sorts by color again."],
+  ask:"Where is the damage?",
+  ans:"pfc",
+  why:"He knows the rule changed. He says so. What he cannot do is stop the old response and start a new one. Knowing something without being able to act on it is the signature of prefrontal damage, and this specific failure has a name: perseveration.",
+  accept:["prefrontal"],
+  partial:["frontal","dorsolateral","executive"],
+  misses:{
+    m1:"Frontal, yes, but M1 is movement. His hands work fine and he is sorting accurately by the wrong rule.",
+    hipp:"He remembers the instruction and remembers being told he is wrong. Memory is not the problem."
+  },
+  ev:{
+    who:"The Wisconsin Card Sorting Test",
+    body:"Milner tested patients with lesions in different locations and found that frontal patients perseverated while temporal patients did not. Note what makes this good evidence: she had comparison groups with damage elsewhere, so the result is about the frontal lobe rather than about brain damage in general.",
+    cite:"Milner, B. (1963). Effects of different brain lesions on card sorting: The role of the frontal lobes. Archives of Neurology, 9(1), 90-100."
+  }
+},
+{
+  id:8,
+  text:["A man describes his childhood in vivid detail. His IQ is above average. He can hold a phone number in mind indefinitely as long as he keeps repeating it. He cannot tell you what he ate an hour ago, and he greets the researcher who tested him yesterday as a stranger."],
+  ask:"Where is the damage?",
+  ans:"hipp",
+  why:"Old memories are fine and immediate holding is fine. What is broken is the step in between, turning current experience into a lasting record. That is the hippocampus, and the pattern has a name: anterograde amnesia.",
+  accept:["hippocamp"],
+  partial:["medial temporal","temporal","mtl"],
+  misses:{
+    pfc:"Prefrontal damage disrupts working memory and strategy. His holding-in-mind is the one thing that works.",
+    amyg:"Next door, and it was removed in this patient too, but removing the amygdala alone does not produce amnesia."
+  },
+  ev:{
+    who:"Patient H.M. (Henry Molaison)",
+    body:"In 1953 a surgeon removed the medial temporal lobes bilaterally to control his seizures. Scoville and Milner tested nine patients from that surgical series and found that memory loss tracked how far back the removal went, with the two most extensive cases the most severely impaired. Removing only the uncus and amygdala did not impair memory. When H.M.'s brain was sectioned after his death in 2008, the reconstruction showed the lesion did not match what had been assumed for fifty years.",
+    cite:"Scoville, W. B., & Milner, B. (1957). Loss of recent memory after bilateral hippocampal lesions. Journal of Neurology, Neurosurgery & Psychiatry, 20(1), 11-21."
+  }
+},
+{
+  id:9,
+  text:["A woman knows exactly what she intends to do, but her movements take a long time to get started. Her handwriting has become small and cramped. Her hand shakes when it is resting in her lap and the shaking stops when she reaches for something."],
+  ask:"Where is the damage?",
+  ans:"bg",
+  why:"The command exists and the movement is possible. What has failed is the machinery that initiates and scales it. Note the direction of the tremor: at rest and not during movement, which is the opposite of the cerebellar pattern two cases back.",
+  accept:["basal ganglia","striat","substantia nigra","nigra"],
+  partial:["cerebell","dopamin"],
+  misses:{
+    cb:"Read the tremor carefully. Cerebellar tremor appears during a reach. This one disappears during a reach.",
+    m1:"M1 damage produces weakness or paralysis. She is not weak, she is slow to start."
+  },
+  ev:{
+    who:"Parkinson's disease",
+    body:"Loss of dopamine-producing cells in the substantia nigra, which projects to the striatum. The basal ganglia return in Chapter 5 as the structure supporting habit learning and reward-based learning, which is why Parkinson's patients show specific learning deficits alongside the motor ones."
+  }
+},
+{
+  id:10,
+  text:["A man is fully awake and aware. He can hear, understand, and answer yes-or-no questions by moving his eyes up and down. He cannot move anything else and cannot speak. His breathing and heart rate require monitoring and support."],
+  ask:"Where is the damage?",
+  ans:"bs",
+  why:"Consciousness and comprehension are untouched, so cortex is intact. What is severed is the pathway between cortex and body, plus the machinery keeping the body running. Both of those pass through one place.",
+  accept:["brainstem","brain stem","pons","medulla","midbrain"],
+  partial:["spinal"],
+  misses:{
+    m1:"M1 damage on one side produces one-sided weakness. This is everything below the eyes, and it takes out autonomic function too.",
+    pfc:"He is aware, oriented, and communicating. Nothing about his thinking is impaired."
+  },
+  ev:{
+    who:"Locked-in syndrome",
+    body:"Usually caused by damage to the ventral pons. The vertical eye movements survive because their control sits above the lesion. It is the cleanest available demonstration that the machinery of consciousness and the machinery of movement are separable."
+  }
+},
+{
+  id:11,
+  stretch:true,
+  text:["A patient cannot form new memories of any kind. Each session she meets the researchers as strangers. Across ten days of training, a tone is repeatedly paired with a puff of air to the eye. By day ten she reliably blinks to the tone before the puff arrives.",
+        "She has no memory of any training session and denies ever having been in the room before."],
+  ask:"Which structure is doing the learning that is still working?",
+  ans:"cb",
+  why:"Two things are dissociated here: she is learning, and she cannot remember learning. That forces the conclusion that more than one memory system exists. The system still running is the one that supports conditioned timing of a motor response.",
+  accept:["cerebell"],
+  partial:["basal ganglia","striat","brainstem"],
+  misses:{
+    hipp:"The hippocampus is the structure that is not working. The question asks about the one that is.",
+    pfc:"She is not strategizing or planning. This learning happens without her knowing about it."
+  },
+  ev:{
+    who:"The dissociation argument",
+    body:"This is the single most important structural idea in the course, and it is why Chapter 2 is not a detour. If one region can be destroyed and one kind of learning survives, then memory is not one thing. Chapter 8 is built on this. Eyeblink conditioning and the cerebellum come back in Chapter 4."
+  }
+},
+{
+  id:12,
+  stretch:true,
+  text:["In 1848 an iron rod was driven through a railroad foreman's skull, entering under the left cheekbone and exiting through the top of the head. He was conscious minutes later and walked with help.",
+        "He could see, hear, speak, move, and remember. His physician reported that his character changed: profane where he had not been, unable to hold to a plan, starting schemes and abandoning them."],
+  ask:"Where is the damage?",
+  ans:"pfc",
+  why:"Every sensory and motor system survived, and so did memory and language. What changed was the regulation of behavior over time: planning, restraint, following through. That is the same region as the card sorting case, doing a different part of the same job.",
+  accept:["prefrontal"],
+  partial:["frontal","orbitofrontal","executive"],
+  misses:{
+    amyg:"He was not missing an emotion. He was failing to regulate his behavior generally.",
+    hipp:"His memory was intact, which is part of what made the case so striking at the time."
+  },
+  ev:{
+    who:"Phineas Gage",
+    body:"Handle this one carefully. Nearly everything commonly repeated about Gage's later life comes from a short physician's report and a great deal of subsequent embellishment. Later scholarship suggests he held a demanding stagecoach driving job in Chile for years, which does not fit the wrecked-man story. The case is real and the frontal damage is real. The tidy morality tale around it is not evidence.",
+    cite:"Harlow, J. M. (1868). Recovery from the passage of an iron bar through the head. Publications of the Massachusetts Medical Society, 2, 327-347."
+  }
+}
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let level = "choose";
+let idx = 0;
+const state = CASES.map(()=>({picked:null, revealed:{}, typed:"", graded:null, shown:false}));
+
+const LVLNOTE = {
+  choose:"Pick from the region bank. The bank is the same every time, so the map does not change, only the evidence.",
+  write:"Type the region. Matching is by keyword, so a right answer worded oddly can read as Close. The written answer is the arbiter, not the badge.",
+  reveal:"Tap to uncover the region, then the reasoning.",
+  cold:"Case only. One button."
+};
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const elCases = document.getElementById("cases");
+const elLabel = document.getElementById("caselabel");
+const elCase  = document.getElementById("casebox");
+const elWork  = document.getElementById("work");
+const elNote  = document.getElementById("lvlnote");
+
+function buildCaseNav(){
+  elCases.innerHTML = "";
+  CASES.forEach((c,i)=>{
+    const b = document.createElement("button");
+    b.className = "cbtn" + (c.stretch ? " stretch" : "") + (state[i].shown ? " done" : "");
+    b.textContent = c.id;
+    if(i===idx) b.setAttribute("aria-current","true");
+    b.addEventListener("click", ()=>{ idx=i; render(); });
+    elCases.appendChild(b);
+  });
+}
+
+function buildLevels(){
+  document.querySelectorAll(".lvl").forEach(b=>{
+    b.setAttribute("aria-pressed", b.dataset.lvl===level ? "true" : "false");
+    b.onclick = ()=>{
+      level = b.dataset.lvl;
+      // switching format clears answers so nothing carries over
+      state.forEach(s=>{ s.picked=null; s.revealed={}; s.typed=""; s.graded=null; s.shown=false; });
+      render();
+    };
+  });
+}
+
+function renderCase(){
+  const c = CASES[idx];
+  elLabel.textContent = "Case " + c.id + " of " + CASES.length;
+  let html = "";
+  c.text.forEach(p => html += "<p>"+p+"</p>");
+  html += '<p class="ask">'+c.ask+ (c.stretch ? '<span class="stretchtag">stretch</span>' : '') +'</p>';
+  elCase.innerHTML = html;
+}
+
+function answerBlock(c, s, wrongId){
+  const r = REGMAP[c.ans];
+  let h = '<div class="answer">';
+  h += '<div class="region">'+r.name+(r.note ? ' <span style="font-weight:normal;font-size:15px;color:var(--muted)">('+r.note+')</span>' : '')+'</div>';
+  h += '<p class="why">'+c.why+'</p>';
+  if(wrongId && c.misses && c.misses[wrongId]){
+    h += '<div class="miss"><b>'+REGMAP[wrongId].name+'</b>'+c.misses[wrongId]+'</div>';
+  }
+  h += '</div>';
+  h += evidenceBlock(c);
+  return h;
+}
+
+function evidenceBlock(c){
+  if(!c.ev) return "";
+  let h = '<details class="ev"><summary>Show the case</summary><div class="evbody">';
+  h += '<div class="who">'+c.ev.who+'</div>';
+  h += '<div>'+c.ev.body+'</div>';
+  if(c.ev.cite) h += '<div class="cite">'+c.ev.cite+'</div>';
+  h += '</div></details>';
+  return h;
+}
+
+function renderChoose(){
+  const c = CASES[idx], s = state[idx];
+  let h = '<h2 class="work">Region bank</h2><div class="grid">';
+  REGIONS.forEach(r=>{
+    let cls = "opt";
+    if(s.picked){
+      if(r.id===c.ans) cls += " right";
+      else if(r.id===s.picked) cls += " wrong";
+    }
+    h += '<button class="'+cls+'" data-r="'+r.id+'"'+(s.picked?" disabled":"")+'>'+
+         r.name + (r.note ? '<small>'+r.note+'</small>' : '') + '</button>';
+  });
+  h += '</div>';
+  if(s.picked) h += answerBlock(c, s, s.picked===c.ans ? null : s.picked);
+  elWork.innerHTML = h;
+
+  if(!s.picked){
+    elWork.querySelectorAll(".opt").forEach(b=>{
+      b.onclick = ()=>{ s.picked=b.dataset.r; s.shown=true; render(); };
+    });
+  }
+}
+
+function grade(text, c){
+  const t = " " + text.toLowerCase().replace(/[^a-z0-9 ]/g," ") + " ";
+  const hit = list => list.some(stem => new RegExp("\\b"+stem).test(t));
+  if(!text.trim()) return null;
+  if(hit(c.accept)) return "yes";
+  if(c.partial && hit(c.partial)) return "close";
+  return "no";
+}
+
+function renderWrite(){
+  const c = CASES[idx], s = state[idx];
+  let h = '<h2 class="work">Your answer</h2>';
+  h += '<div class="fieldlab">Region</div>';
+  h += '<input type="text" id="tin" placeholder="Type the structure" value="'+
+       s.typed.replace(/"/g,"&quot;")+'"'+(s.graded?" disabled":"")+'>';
+  if(!s.graded){
+    h += '<div class="btnrow"><button class="btn" id="chk">Check</button></div>';
+    h += '<p class="caveat">Matching is by keyword, so a right answer worded oddly can read as Close. The written answer below is the arbiter, not the badge.</p>';
+  } else {
+    const lab = s.graded==="yes" ? ["yes","Yes"] : s.graded==="close" ? ["close","Close"] : ["no","Not yet"];
+    h += '<div style="margin-top:14px"><span class="badge '+lab[0]+'">'+lab[1]+'</span></div>';
+    h += answerBlock(c, s, null);
+    h += '<div class="btnrow"><button class="btn ghost" id="again">Try again</button></div>';
+  }
+  elWork.innerHTML = h;
+
+  const inp = document.getElementById("tin");
+  if(inp && !s.graded){
+    inp.oninput = ()=>{ s.typed = inp.value; };
+    inp.onkeydown = e=>{ if(e.key==="Enter"){ e.preventDefault(); document.getElementById("chk").click(); } };
+    document.getElementById("chk").onclick = ()=>{
+      const g = grade(s.typed, c);
+      if(!g) return;
+      s.graded = g; s.shown = true; render();
+    };
+  }
+  const ag = document.getElementById("again");
+  if(ag) ag.onclick = ()=>{ s.graded=null; s.typed=""; render(); };
+}
+
+function renderReveal(){
+  const c = CASES[idx], s = state[idx];
+  const r = REGMAP[c.ans];
+  const cards = [
+    {k:"region", q:"The region", a:r.name + (r.note ? " ("+r.note+")" : "")},
+    {k:"why",    q:"Why that one", a:c.why}
+  ];
+  let h = '<h2 class="work">Tap to reveal</h2>';
+  cards.forEach(cd=>{
+    const open = s.revealed[cd.k];
+    h += '<div class="card" data-k="'+cd.k+'"><div class="q">'+cd.q+'</div>'+
+         '<div class="a'+(open?"":" hidden")+'">'+(open?cd.a:"Tap")+'</div></div>';
+  });
+  h += evidenceBlock(c);
+  elWork.innerHTML = h;
+  elWork.querySelectorAll(".card").forEach(el=>{
+    el.onclick = ()=>{ s.revealed[el.dataset.k]=true; s.shown=true; render(); };
+  });
+}
+
+function renderCold(){
+  const c = CASES[idx], s = state[idx];
+  let h = "";
+  if(!s.shown){
+    h += '<div class="btnrow" style="margin-top:0"><button class="btn" id="rv">Reveal the answer</button></div>';
+  } else {
+    h += answerBlock(c, s, null);
+  }
+  elWork.innerHTML = h;
+  const rv = document.getElementById("rv");
+  if(rv) rv.onclick = ()=>{ s.shown=true; render(); };
+}
+
+function render(){
+  elNote.textContent = LVLNOTE[level];
+  buildLevels();
+  buildCaseNav();
+  renderCase();
+  if(level==="choose") renderChoose();
+  else if(level==="write") renderWrite();
+  else if(level==="reveal") renderReveal();
+  else renderCold();
+  document.getElementById("prev").disabled = idx===0;
+  document.getElementById("next").disabled = idx===CASES.length-1;
+}
+
+document.getElementById("prev").onclick = ()=>{ if(idx>0){ idx--; render(); window.scrollTo(0,0);} };
+document.getElementById("next").onclick = ()=>{ if(idx<CASES.length-1){ idx++; render(); window.scrollTo(0,0);} };
+
+render();
+</script>
+</body>
+</html>
